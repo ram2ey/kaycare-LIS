@@ -9,7 +9,7 @@ var connectionString = args.FirstOrDefault()
 Console.WriteLine($"Seeding KayCareLISDb...");
 
 var options = new DbContextOptionsBuilder<AppDbContext>()
-    .UseSqlServer(connectionString)
+    .UseSqlServer(connectionString, o => o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null))
     .Options;
 
 var tenantContext = new DesignTimeTenantContext();
