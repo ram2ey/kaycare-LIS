@@ -1,0 +1,25 @@
+namespace KayCareLIS.Core.Entities;
+
+public class Bill : TenantEntity
+{
+    public Guid     BillId          { get; set; }
+    public string   BillNumber      { get; set; } = string.Empty;
+    public Guid     PatientId       { get; set; }
+    public Guid     CreatedByUserId { get; set; }
+    public string   Status          { get; set; } = "Draft";
+    public string?  Notes           { get; set; }
+    public decimal  TotalAmount     { get; set; }
+    public decimal  AdjustmentTotal { get; set; }
+    public decimal  DiscountAmount  { get; set; }
+    public string?  DiscountReason  { get; set; }
+    public decimal  PaidAmount      { get; set; }
+    public decimal  BalanceDue      { get; set; }
+    public DateTime? IssuedAt       { get; set; }
+
+    public Patient Patient   { get; set; } = null!;
+    public User    CreatedBy { get; set; } = null!;
+
+    public ICollection<BillItem>       Items       { get; set; } = [];
+    public ICollection<Payment>        Payments    { get; set; } = [];
+    public ICollection<BillAdjustment> Adjustments { get; set; } = [];
+}

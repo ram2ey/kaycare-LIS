@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CC3588C6-2698-4F1E-A964-0587EC005BD7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayCareLIS.Core", "src\KayCareLIS.Core\KayCareLIS.Core.csproj", "{79B94ED4-7558-4FFB-B10A-9BBF8C10D1AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayCareLIS.Infrastructure", "src\KayCareLIS.Infrastructure\KayCareLIS.Infrastructure.csproj", "{F7155F66-D83F-49D4-B769-C94340320048}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayCareLIS.API", "src\KayCareLIS.API\KayCareLIS.API.csproj", "{64D561A0-7853-4774-9577-7DF6A52F7F93}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{A1B36C78-9BB4-4736-86B3-A69128CB33FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seeder", "tools\Seeder\Seeder.csproj", "{BBE0A1EE-A114-4108-8DD8-359C07FE88BB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{79B94ED4-7558-4FFB-B10A-9BBF8C10D1AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79B94ED4-7558-4FFB-B10A-9BBF8C10D1AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79B94ED4-7558-4FFB-B10A-9BBF8C10D1AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79B94ED4-7558-4FFB-B10A-9BBF8C10D1AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7155F66-D83F-49D4-B769-C94340320048}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7155F66-D83F-49D4-B769-C94340320048}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7155F66-D83F-49D4-B769-C94340320048}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7155F66-D83F-49D4-B769-C94340320048}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64D561A0-7853-4774-9577-7DF6A52F7F93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64D561A0-7853-4774-9577-7DF6A52F7F93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64D561A0-7853-4774-9577-7DF6A52F7F93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64D561A0-7853-4774-9577-7DF6A52F7F93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBE0A1EE-A114-4108-8DD8-359C07FE88BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBE0A1EE-A114-4108-8DD8-359C07FE88BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBE0A1EE-A114-4108-8DD8-359C07FE88BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBE0A1EE-A114-4108-8DD8-359C07FE88BB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{79B94ED4-7558-4FFB-B10A-9BBF8C10D1AD} = {CC3588C6-2698-4F1E-A964-0587EC005BD7}
+		{F7155F66-D83F-49D4-B769-C94340320048} = {CC3588C6-2698-4F1E-A964-0587EC005BD7}
+		{64D561A0-7853-4774-9577-7DF6A52F7F93} = {CC3588C6-2698-4F1E-A964-0587EC005BD7}
+		{BBE0A1EE-A114-4108-8DD8-359C07FE88BB} = {A1B36C78-9BB4-4736-86B3-A69128CB33FE}
+	EndGlobalSection
+EndGlobal
