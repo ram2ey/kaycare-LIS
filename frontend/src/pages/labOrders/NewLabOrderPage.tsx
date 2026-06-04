@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getCatalog, createLabOrder } from '../../api/labOrders'
 import { searchPatients, getPatient } from '../../api/patients'
+import { useDebounce } from '../../hooks/useDebounce'
 import type { LabTestCatalogItem } from '../../types/labOrders'
 import { PRIORITY_OPTIONS } from '../../types/labOrders'
 
@@ -22,6 +23,8 @@ export function NewLabOrderPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const debouncedQuery = useDebounce(patientQuery, 250)
+
   useEffect(() => {
     getCatalog().then(setCatalog)
     if (patientIdParam) {
@@ -31,12 +34,23 @@ export function NewLabOrderPage() {
     }
   }, [patientIdParam])
 
-  async function handlePatientSearch(q: string) {
-    setPatientQuery(q)
-    if (q.length < 2) { setSuggestions([]); return }
-    const res = await searchPatients(q, 1, 6)
-    setSuggestions(res.items.map((p) => ({ patientId: p.patientId, name: `${p.firstName} ${p.lastName}`, mrn: p.mrn })))
-  }
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      setSuggestions([])
+      return
+    }
+    if (patientId) return // Selected
+
+    searchPatients(debouncedQuery, 1, 6).then((res) => {
+      setSuggestions(
+        res.items.map((p) => ({
+          patientId: p.patientId,
+          name: `${p.firstName} ${p.lastName}`,
+          mrn: p.mrn,
+        }))
+      )
+    })
+  }, [debouncedQuery, patientId])
 
   function toggleTest(t: LabTestCatalogItem) {
     setSelectedTests((prev) =>
@@ -109,7 +123,7 @@ export function NewLabOrderPage() {
                 type="text"
                 placeholder="Search patient…"
                 value={patientQuery}
-                onChange={(e) => handlePatientSearch(e.target.value)}
+                onChange={(e) => setPatientQuery(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
               {suggestions.length > 0 && (
@@ -213,7 +227,7 @@ export function NewLabOrderPage() {
                         }`}
                       >
                         <p className="font-medium text-xs">{t.testName}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{t.sampleType} · {t.turnaroundHours}h TAT</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{t.isManualEntry ? 'Manual' : t.instrumentType || 'Analyzer'} · {t.tatHours}h TAT</p>
                       </button>
                     )
                   })}

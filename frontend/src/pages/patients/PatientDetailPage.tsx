@@ -4,15 +4,20 @@ import { getPatient } from '../../api/patients'
 import { getLabOrdersForPatient } from '../../api/labOrders'
 import { getBills } from '../../api/billing'
 import { getDocuments, uploadDocument, deleteDocument } from '../../api/documents'
+import { getAppointmentsForPatient } from '../../api/appointments'
+import { getRadiologyOrdersForPatient } from '../../api/radiology'
+import { PatientTimeline } from '../../components/PatientTimeline'
 import type { PatientDetail } from '../../types/patients'
 import type { LabOrderSummary } from '../../types/labOrders'
 import type { BillSummary } from '../../types/billing'
 import type { DocumentResponse } from '../../api/documents'
+import type { AppointmentSummary } from '../../types/appointments'
+import type { RadiologyOrderSummary } from '../../types/radiology'
 import { useAuth } from '../../context/AuthContext'
 import { ORDER_STATUS_COLORS } from '../../types/labOrders'
 import { BILL_STATUS_COLORS as BSC } from '../../types/billing'
 
-type Tab = 'overview' | 'lab' | 'billing' | 'documents'
+type Tab = 'overview' | 'timeline' | 'lab' | 'billing' | 'documents'
 
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -23,6 +28,8 @@ export function PatientDetailPage() {
   const [labOrders, setLabOrders] = useState<LabOrderSummary[]>([])
   const [bills, setBills] = useState<BillSummary[]>([])
   const [documents, setDocuments] = useState<DocumentResponse[]>([])
+  const [appointments, setAppointments] = useState<AppointmentSummary[]>([])
+  const [radiologyOrders, setRadiologyOrders] = useState<RadiologyOrderSummary[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,6 +39,8 @@ export function PatientDetailPage() {
       getLabOrdersForPatient(id).then(setLabOrders),
       getBills(id).then(setBills),
       getDocuments(id).then(setDocuments),
+      getAppointmentsForPatient(id).then(setAppointments),
+      getRadiologyOrdersForPatient(id).then(setRadiologyOrders),
     ]).finally(() => setLoading(false))
   }, [id])
 
@@ -102,7 +111,7 @@ export function PatientDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {(['overview', 'lab', 'billing', 'documents'] as Tab[]).map((t) => (
+        {(['overview', 'timeline', 'lab', 'billing', 'documents'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -112,7 +121,7 @@ export function PatientDetailPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'lab' ? 'Lab Orders' : t === 'billing' ? 'Billing' : t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === 'timeline' ? 'Clinical Timeline' : t === 'lab' ? 'Lab Orders' : t === 'billing' ? 'Billing' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
@@ -148,6 +157,18 @@ export function PatientDetailPage() {
         </div>
       )}
 
+      {/* Clinical Timeline */}
+      {tab === 'timeline' && (
+        <PatientTimeline
+          patientName={`${patient.firstName} ${patient.lastName}`}
+          patientMrn={patient.mrn}
+          appointments={appointments}
+          bills={bills}
+          labOrders={labOrders}
+          radiologyOrders={radiologyOrders}
+        />
+      )}
+
       {/* Lab Orders */}
       {tab === 'lab' && (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -173,14 +194,19 @@ export function PatientDetailPage() {
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-gray-600 text-xs">
-                      {o.items.map((i) => i.testName).join(', ')}
+                      {o.testNames.join(', ')}
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        o.priority === 'STAT' ? 'bg-red-100 text-red-700' :
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        o.priority === 'STAT' ? 'bg-red-100 text-red-700 border border-red-200' :
                         o.priority === 'Urgent' ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>{o.priority}</span>
+                        'bg-gray-150 text-gray-600'
+                      }`}>{o.priority === 'STAT' && (
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                        </span>
+                      )}{o.priority}</span>
                     </td>
                     <td className="px-5 py-3">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${ORDER_STATUS_COLORS[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -188,7 +214,7 @@ export function PatientDetailPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-gray-500 text-xs">
-                      {new Date(o.createdAt).toLocaleDateString('en-GB')}
+                      {new Date(o.orderedAt).toLocaleDateString('en-GB')}
                     </td>
                   </tr>
                 ))}

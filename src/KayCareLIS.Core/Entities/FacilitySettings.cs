@@ -8,4 +8,6 @@ public class FacilitySettings : TenantEntity
     public string? Phone              { get; set; }
     public string? Email              { get; set; }
     public string? LogoBlobName       { get; set; }
+    public bool    IsLaboratoryEnabled { get; set; } = true;
+    public bool    IsRadiologyEnabled { get; set; } = true;
 }

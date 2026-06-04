@@ -6,10 +6,12 @@ import {
   enterReport,
   signItem,
   downloadRadiologyReport,
+  uploadPacsStudy,
 } from '../../api/radiology'
 import type { RadiologyOrderDetail, RadiologyOrderItemResponse } from '../../types/radiology'
 import { ORDER_STATUS_COLORS, ITEM_STATUS_COLORS } from '../../types/radiology'
 import { useAuth } from '../../context/AuthContext'
+import { PacsViewerModal } from '../../components/PacsViewerModal'
 
 export function RadiologyOrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -20,6 +22,7 @@ export function RadiologyOrderDetailPage() {
   const [reportItem, setReportItem] = useState<RadiologyOrderItemResponse | null>(null)
   const [reportForm, setReportForm] = useState({ findings: '', impression: '', recommendations: '', pacsStudyUid: '', pacsViewerUrl: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [activePacsItem, setActivePacsItem] = useState<RadiologyOrderItemResponse | null>(null)
 
   function load() {
     if (!id) return
@@ -33,6 +36,18 @@ export function RadiologyOrderDetailPage() {
     if (!confirm('Mark images as acquired?')) return
     await markAcquired(itemId)
     load()
+  }
+
+  async function handleUploadScan(itemId: string, file: File) {
+    setSubmitting(true)
+    try {
+      await uploadPacsStudy(itemId, file)
+      load()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to upload scan file.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function handleEnterReport(e: React.FormEvent) {
@@ -93,11 +108,16 @@ export function RadiologyOrderDetailPage() {
             <span className={`px-2.5 py-1 rounded text-xs font-medium ${ORDER_STATUS_COLORS[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
               {order.status}
             </span>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-              order.priority === 'STAT' ? 'bg-red-100 text-red-700' :
+            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+              order.priority === 'STAT' ? 'bg-red-100 text-red-700 border border-red-200' :
               order.priority === 'Urgent' ? 'bg-orange-100 text-orange-700' :
-              'bg-gray-100 text-gray-600'
-            }`}>{order.priority}</span>
+              'bg-gray-150 text-gray-600'
+            }`}>{order.priority === 'STAT' && (
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+              </span>
+            )}{order.priority}</span>
           </div>
           <p className="text-gray-600 text-sm">
             {order.patientName} · <span className="font-mono text-xs">{order.patientMrn}</span>
@@ -165,16 +185,16 @@ export function RadiologyOrderDetailPage() {
                       {item.reportingDoctorName && (
                         <p className="text-xs text-gray-400 mt-0.5">by {item.reportingDoctorName}</p>
                       )}
-                      {item.pacsViewerUrl && (
-                        <a
-                          href={item.pacsViewerUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-sky-600 hover:underline mt-0.5 block"
-                          onClick={(e) => e.stopPropagation()}
+                      {item.status !== 'Ordered' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActivePacsItem(item)
+                          }}
+                          className="text-xs text-sky-600 hover:underline mt-1.5 block font-semibold text-left"
                         >
-                          View in PACS →
-                        </a>
+                          🩻 View in PACS Workstation
+                        </button>
                       )}
                     </div>
                   ) : (
@@ -184,12 +204,30 @@ export function RadiologyOrderDetailPage() {
                 <td className="px-5 py-3">
                   <div className="flex flex-col gap-1">
                     {canAcquire && item.status === 'Ordered' && (
-                      <button
-                        onClick={() => handleMarkAcquired(item.radiologyOrderItemId)}
-                        className="text-yellow-600 hover:underline text-xs font-medium"
-                      >
-                        Mark Acquired
-                      </button>
+                      <div className="flex flex-col gap-1.5 border border-dashed border-gray-300 rounded-xl p-2 bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
+                        <button
+                          onClick={() => handleMarkAcquired(item.radiologyOrderItemId)}
+                          className="text-yellow-600 hover:underline text-[10px] font-bold text-left self-start"
+                        >
+                          ⚡ Mark Acquired (No Scan)
+                        </button>
+                        <div className="relative flex flex-col items-center justify-center p-1.5 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-sky-300 transition-colors">
+                          <label className="cursor-pointer text-[10px] text-sky-655 font-bold flex items-center gap-1">
+                            <span>🩻 Upload scan file</span>
+                            <input
+                              type="file"
+                              accept="image/png, image/jpeg"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  handleUploadScan(item.radiologyOrderItemId, file)
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
                     )}
                     {canReport && (item.status === 'Acquired' || item.status === 'Ordered') && (
                       <button
@@ -304,6 +342,19 @@ export function RadiologyOrderDetailPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {activePacsItem && (
+        <PacsViewerModal
+          isOpen={!!activePacsItem}
+          onClose={() => setActivePacsItem(null)}
+          patientName={order.patientName}
+          patientMrn={order.patientMrn}
+          procedureName={activePacsItem.procedureName}
+          modality={activePacsItem.modality}
+          accessionNumber={activePacsItem.accessionNumber ?? 'N/A'}
+          imageUrl={activePacsItem.pacsViewerUrl ?? undefined}
+        />
       )}
     </div>
   )

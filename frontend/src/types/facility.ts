@@ -5,6 +5,8 @@ export interface FacilitySettingsResponse {
   phone: string | null
   email: string | null
   logoUrl: string | null
+  isLaboratoryEnabled: boolean
+  isRadiologyEnabled: boolean
 }
 
 export interface SaveFacilitySettingsRequest {
@@ -12,4 +14,6 @@ export interface SaveFacilitySettingsRequest {
   address?: string
   phone?: string
   email?: string
+  isLaboratoryEnabled?: boolean
+  isRadiologyEnabled?: boolean
 }

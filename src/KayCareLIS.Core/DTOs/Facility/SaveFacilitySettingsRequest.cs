@@ -6,4 +6,6 @@ public class SaveFacilitySettingsRequest
     public string? Address      { get; set; }
     public string? Phone        { get; set; }
     public string? Email        { get; set; }
+    public bool    IsLaboratoryEnabled { get; set; } = true;
+    public bool    IsRadiologyEnabled { get; set; } = true;
 }

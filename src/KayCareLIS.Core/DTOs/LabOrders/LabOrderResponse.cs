@@ -19,5 +19,6 @@ public class LabOrderResponse
     public int IncompleteCount { get; set; }
     public int CompletedCount  { get; set; }
     public int SignedCount     { get; set; }
+    public string? AccessionNumber { get; set; }
     public IReadOnlyList<string> TestNames { get; set; } = [];
 }

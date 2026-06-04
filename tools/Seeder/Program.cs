@@ -1,4 +1,4 @@
-﻿using KayCareLIS.Core.Entities;
+using KayCareLIS.Core.Entities;
 using KayCareLIS.Infrastructure.Data;
 using KayCareLIS.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -83,6 +83,31 @@ else
     Console.WriteLine($"  = Admin user already exists: {adminEmail}");
 }
 
+// ── SuperAdmin User ──────────────────────────────────────────
+var superAdminEmail = "superadmin@demo.com";
+if (!await db.Users.AnyAsync(u => u.Email == superAdminEmail))
+{
+    var superAdminRole = await db.Roles.FirstAsync(r => r.RoleName == "SuperAdmin");
+    db.Users.Add(new User
+    {
+        UserId             = Guid.NewGuid(),
+        TenantId           = tenant.TenantId,
+        RoleId             = superAdminRole.RoleId,
+        Email              = superAdminEmail,
+        PasswordHash       = BCrypt.Net.BCrypt.HashPassword("SuperAdmin@1234", 12),
+        FirstName          = "Super",
+        LastName           = "Admin",
+        IsActive           = true,
+        MustChangePassword = false,
+    });
+    await db.SaveChangesAsync();
+    Console.WriteLine($"  + SuperAdmin user: {superAdminEmail} / SuperAdmin@1234");
+}
+else
+{
+    Console.WriteLine($"  = SuperAdmin user already exists: {superAdminEmail}");
+}
+
 var testCount = await db.LabTestCatalog.CountAsync();
 Console.WriteLine($"  = Lab test catalog: {testCount} tests (seeded by EF migration).");
 
@@ -90,7 +115,10 @@ Console.WriteLine();
 Console.WriteLine("Seed complete.");
 Console.WriteLine();
 Console.WriteLine("  Tenant:   demo");
-Console.WriteLine("  Email:    admin@demo.com");
-Console.WriteLine("  Password: Admin@1234");
+Console.WriteLine("  Admin Email:    admin@demo.com");
+Console.WriteLine("  Admin Password: Admin@1234");
+Console.WriteLine();
+Console.WriteLine("  SuperAdmin Email:    superadmin@demo.com");
+Console.WriteLine("  SuperAdmin Password: SuperAdmin@1234");
 Console.WriteLine();
 Console.WriteLine("Run the API with X-Tenant-Code: demo header for local dev.");

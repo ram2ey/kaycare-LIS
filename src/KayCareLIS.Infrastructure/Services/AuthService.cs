@@ -60,6 +60,7 @@ public class AuthService : IAuthService
             Email              = user.Email,
             FullName           = $"{user.FirstName} {user.LastName}",
             Role               = user.Role.RoleName,
+            Department         = user.Department,
             MustChangePassword = user.MustChangePassword,
         };
     }

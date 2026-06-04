@@ -90,11 +90,17 @@ export function RadiologyOrdersPage() {
                     {order.procedureNames.join(', ')}
                   </td>
                   <td className="px-5 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      order.priority === 'STAT' ? 'bg-red-100 text-red-700' :
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      order.priority === 'STAT' ? 'bg-red-100 text-red-700 border border-red-200' :
                       order.priority === 'Urgent' ? 'bg-orange-100 text-orange-700' :
-                      'bg-gray-100 text-gray-600'
+                      'bg-gray-150 text-gray-600'
                     }`}>
+                      {order.priority === 'STAT' && (
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                        </span>
+                      )}
                       {order.priority}
                     </span>
                   </td>

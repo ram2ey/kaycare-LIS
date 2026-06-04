@@ -35,6 +35,7 @@ public class AppDbContext : DbContext
     public DbSet<ImagingProcedure> ImagingProcedures   => Set<ImagingProcedure>();
     public DbSet<RadiologyOrder>   RadiologyOrders     => Set<RadiologyOrder>();
     public DbSet<RadiologyOrderItem> RadiologyOrderItems => Set<RadiologyOrderItem>();
+    public DbSet<CriticalCallLog>  CriticalCallLogs => Set<CriticalCallLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,6 +58,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<AuditLog>()          .HasQueryFilter(a => a.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<RadiologyOrder>()    .HasQueryFilter(o => o.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<RadiologyOrderItem>().HasQueryFilter(i => i.TenantId == _tenantContext.TenantId);
+        modelBuilder.Entity<CriticalCallLog>()   .HasQueryFilter(c => c.TenantId == _tenantContext.TenantId);
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

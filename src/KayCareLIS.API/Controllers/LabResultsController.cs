@@ -30,4 +30,20 @@ public class LabResultsController : ControllerBase
         var result = await _labResults.GetByIdAsync(id, ct);
         return result == null ? NotFound() : Ok(result);
     }
+
+    [HttpPost("simulate")]
+    public async Task<IActionResult> SimulateHl7([FromBody] SimulateHl7Request request, CancellationToken ct)
+    {
+        var success = await _labResults.ProcessHl7MessageAsync(request.RawHl7, ct);
+        if (!success)
+        {
+            return BadRequest(new { error = "Failed to parse HL7 message or duplicate accession." });
+        }
+        return Ok(new { success = true });
+    }
+}
+
+public class SimulateHl7Request
+{
+    public string RawHl7 { get; set; } = string.Empty;
 }

@@ -6,6 +6,7 @@ import type {
   CreateRadiologyOrderRequest,
   RadiologyReportRequest,
   RadiologyOrderItemResponse,
+  RadiologyStatsResponse,
 } from '../types/radiology'
 
 export const getProcedureCatalog = () =>
@@ -34,3 +35,17 @@ export const signItem = (itemId: string) =>
 
 export const downloadRadiologyReport = (id: string) =>
   apiClient.get(`/radiology-orders/${id}/report`, { responseType: 'blob' }).then((r) => r.data as Blob)
+
+export const uploadPacsStudy = (itemId: string, file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiClient.post<RadiologyOrderItemResponse>(`/radiology-orders/items/${itemId}/pacs-upload`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }).then((r) => r.data)
+}
+
+export const getRadiologyStats = () =>
+  apiClient.get<RadiologyStatsResponse>('/radiology-orders/stats').then((r) => r.data)
+

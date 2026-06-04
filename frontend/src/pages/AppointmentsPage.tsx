@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAppointments, confirmAppointment, cancelAppointment, checkInAppointment, createAppointment } from '../api/appointments'
 import { searchPatients } from '../api/patients'
+import { useDebounce } from '../hooks/useDebounce'
 import { getUsers } from '../api/users'
 import type { AppointmentSummary } from '../types/appointments'
 import type { CreateAppointmentRequest } from '../types/appointments'
@@ -144,12 +145,25 @@ function BookAppointmentModal({
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handlePatientSearch(q: string) {
-    setPatientQuery(q)
-    if (q.length < 2) { setSuggestions([]); return }
-    const res = await searchPatients(q, 1, 6)
-    setSuggestions(res.items.map((p) => ({ patientId: p.patientId, name: `${p.firstName} ${p.lastName}`, mrn: p.mrn })))
-  }
+  const debouncedQuery = useDebounce(patientQuery, 250)
+
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      setSuggestions([])
+      return
+    }
+    if (patientId) return // Selected
+
+    searchPatients(debouncedQuery, 1, 6).then((res) => {
+      setSuggestions(
+        res.items.map((p) => ({
+          patientId: p.patientId,
+          name: `${p.firstName} ${p.lastName}`,
+          mrn: p.mrn,
+        }))
+      )
+    })
+  }, [debouncedQuery, patientId])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -178,7 +192,7 @@ function BookAppointmentModal({
               </div>
             ) : (
               <div className="relative">
-                <input value={patientQuery} onChange={(e) => handlePatientSearch(e.target.value)} placeholder="Search patient…" className={inputCls} />
+                <input value={patientQuery} onChange={(e) => setPatientQuery(e.target.value)} placeholder="Search patient…" className={inputCls} />
                 {suggestions.length > 0 && (
                   <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                     {suggestions.map((s) => (

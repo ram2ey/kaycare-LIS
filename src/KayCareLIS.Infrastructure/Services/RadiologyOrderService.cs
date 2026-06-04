@@ -5,6 +5,7 @@ using KayCareLIS.Core.Exceptions;
 using KayCareLIS.Core.Interfaces;
 using KayCareLIS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace KayCareLIS.Infrastructure.Services;
 
@@ -23,6 +24,7 @@ public class RadiologyOrderService : IRadiologyOrderService
 
     public async Task<IReadOnlyList<ImagingProcedureResponse>> GetProcedureCatalogAsync(CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         var procedures = await _db.ImagingProcedures
             .AsNoTracking()
             .Where(p => p.IsActive)
@@ -33,8 +35,11 @@ public class RadiologyOrderService : IRadiologyOrderService
         return procedures.Select(MapProcedure).ToList();
     }
 
+    private static readonly SemaphoreSlim _accessionSemaphore = new SemaphoreSlim(1, 1);
+
     public async Task<RadiologyOrderDetailResponse> PlaceOrderAsync(CreateRadiologyOrderRequest req, CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         if (req.ProcedureIds.Count == 0)
             throw new AppException("At least one procedure must be selected.");
 
@@ -49,48 +54,57 @@ public class RadiologyOrderService : IRadiologyOrderService
         if (procedures.Count != req.ProcedureIds.Count)
             throw new AppException("One or more selected procedures were not found or are inactive.");
 
-        var order = new RadiologyOrder
+        await _accessionSemaphore.WaitAsync(ct);
+        try
         {
-            RadiologyOrderId     = Guid.NewGuid(),
-            PatientId            = req.PatientId,
-            BillId               = req.BillId,
-            OrderingDoctorUserId = _currentUser.UserId,
-            Priority             = req.Priority ?? "Routine",
-            Status               = RadiologyOrderStatus.Pending,
-            ClinicalIndication   = req.ClinicalIndication?.Trim(),
-            Notes                = req.Notes?.Trim(),
-        };
-        _db.RadiologyOrders.Add(order);
-        await _db.SaveChangesAsync(ct);
-
-        foreach (var proc in procedures)
-        {
-            var accession = await GenerateAccessionAsync(ct);
-            var item = new RadiologyOrderItem
+            var order = new RadiologyOrder
             {
-                RadiologyOrderItemId = Guid.NewGuid(),
-                RadiologyOrderId     = order.RadiologyOrderId,
-                TenantId             = _tenantContext.TenantId,
-                ImagingProcedureId   = proc.ImagingProcedureId,
-                ProcedureName        = proc.ProcedureName,
-                Modality             = proc.Modality,
-                BodyPart             = proc.BodyPart,
-                Department           = proc.Department,
-                TatHours             = proc.TatHours,
-                AccessionNumber      = accession,
-                Status               = RadiologyOrderItemStatus.Ordered,
+                RadiologyOrderId     = Guid.NewGuid(),
+                PatientId            = req.PatientId,
+                BillId               = req.BillId,
+                OrderingDoctorUserId = _currentUser.UserId,
+                Priority             = req.Priority ?? "Routine",
+                Status               = RadiologyOrderStatus.Pending,
+                ClinicalIndication   = req.ClinicalIndication?.Trim(),
+                Notes                = req.Notes?.Trim(),
             };
-            _db.RadiologyOrderItems.Add(item);
+            _db.RadiologyOrders.Add(order);
+            await _db.SaveChangesAsync(ct);
+
+            foreach (var proc in procedures)
+            {
+                var accession = await GenerateAccessionAsync(ct);
+                var item = new RadiologyOrderItem
+                {
+                    RadiologyOrderItemId = Guid.NewGuid(),
+                    RadiologyOrderId     = order.RadiologyOrderId,
+                    TenantId             = _tenantContext.TenantId,
+                    ImagingProcedureId   = proc.ImagingProcedureId,
+                    ProcedureName        = proc.ProcedureName,
+                    Modality             = proc.Modality,
+                    BodyPart             = proc.BodyPart,
+                    Department           = proc.Department,
+                    TatHours             = proc.TatHours,
+                    AccessionNumber      = accession,
+                    Status               = RadiologyOrderItemStatus.Ordered,
+                };
+                _db.RadiologyOrderItems.Add(item);
+            }
+
+            order.Status = RadiologyOrderStatus.Scheduled;
+            await _db.SaveChangesAsync(ct);
+
+            return await LoadDetailAsync(order.RadiologyOrderId, ct);
         }
-
-        order.Status = RadiologyOrderStatus.Scheduled;
-        await _db.SaveChangesAsync(ct);
-
-        return await LoadDetailAsync(order.RadiologyOrderId, ct);
+        finally
+        {
+            _accessionSemaphore.Release();
+        }
     }
 
     public async Task<IReadOnlyList<RadiologyOrderResponse>> GetByPatientAsync(Guid patientId, CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         var orders = await _db.RadiologyOrders
             .Include(o => o.Patient)
             .Include(o => o.OrderingDoctor)
@@ -105,6 +119,7 @@ public class RadiologyOrderService : IRadiologyOrderService
 
     public async Task<IReadOnlyList<RadiologyOrderResponse>> GetWorklistAsync(DateOnly date, string? status, CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         var from = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var to   = date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
@@ -124,6 +139,7 @@ public class RadiologyOrderService : IRadiologyOrderService
 
     public async Task<RadiologyOrderDetailResponse?> GetByIdAsync(Guid radiologyOrderId, CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         var order = await _db.RadiologyOrders
             .Include(o => o.Patient)
             .Include(o => o.OrderingDoctor)
@@ -173,8 +189,9 @@ public class RadiologyOrderService : IRadiologyOrderService
         };
     }
 
-    public async Task<RadiologyOrderItemResponse> MarkAcquiredAsync(Guid itemId, CancellationToken ct)
+    public async Task<RadiologyOrderItemResponse> MarkAcquiredAsync(Guid itemId, string? pacsUrl, CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         var item = await LoadItem(itemId, ct);
 
         if (item.Status != RadiologyOrderItemStatus.Ordered)
@@ -182,6 +199,10 @@ public class RadiologyOrderService : IRadiologyOrderService
 
         item.Status     = RadiologyOrderItemStatus.Acquired;
         item.AcquiredAt = DateTime.UtcNow;
+        if (!string.IsNullOrEmpty(pacsUrl))
+        {
+            item.PacsViewerUrl = pacsUrl;
+        }
         await _db.SaveChangesAsync(ct);
         await UpdateOrderStatusAsync(item.RadiologyOrderId, ct);
         return MapItem(item, null);
@@ -189,6 +210,7 @@ public class RadiologyOrderService : IRadiologyOrderService
 
     public async Task<RadiologyOrderItemResponse> EnterReportAsync(Guid itemId, RadiologyReportRequest req, CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         var item = await LoadItem(itemId, ct);
 
         if (item.Status == RadiologyOrderItemStatus.Signed)
@@ -210,6 +232,7 @@ public class RadiologyOrderService : IRadiologyOrderService
 
     public async Task<RadiologyOrderItemResponse> SignItemAsync(Guid itemId, CancellationToken ct)
     {
+        await ValidateAccessAsync(ct);
         var item = await LoadItem(itemId, ct);
 
         if (item.Status != RadiologyOrderItemStatus.Reported)
@@ -259,10 +282,19 @@ public class RadiologyOrderService : IRadiologyOrderService
     private async Task<string> GenerateAccessionAsync(CancellationToken ct)
     {
         var year  = DateTime.UtcNow.Year;
-        var count = await _db.RadiologyOrderItems
-            .Where(i => i.AccessionNumber != null && i.AccessionNumber.StartsWith($"RAD-{year}-"))
+        var prefix = $"RAD-{year}-";
+
+        var dbCount = await _db.RadiologyOrderItems
+            .Where(i => i.AccessionNumber != null && i.AccessionNumber.StartsWith(prefix))
             .CountAsync(ct);
-        return $"RAD-{year}-{(count + 1):D5}";
+
+        var localCount = _db.ChangeTracker.Entries<RadiologyOrderItem>()
+            .Count(e => e.State == EntityState.Added 
+                && e.Entity.TenantId == _tenantContext.TenantId
+                && e.Entity.AccessionNumber != null 
+                && e.Entity.AccessionNumber.StartsWith(prefix));
+
+        return $"{prefix}{(dbCount + localCount + 1):D5}";
     }
 
     private static RadiologyOrderResponse MapSummary(RadiologyOrder o)
@@ -331,4 +363,42 @@ public class RadiologyOrderService : IRadiologyOrderService
         Department         = p.Department,
         TatHours           = p.TatHours,
     };
+
+    public async Task<RadiologyStatsResponse> GetStatsAsync(CancellationToken ct)
+    {
+        await ValidateAccessAsync(ct);
+        var scheduled = await _db.RadiologyOrders
+            .CountAsync(o => o.Status == RadiologyOrderStatus.Scheduled, ct);
+
+        var acquired = await _db.RadiologyOrderItems
+            .CountAsync(i => i.Status == RadiologyOrderItemStatus.Acquired, ct);
+
+        var reported = await _db.RadiologyOrderItems
+            .CountAsync(i => i.Status == RadiologyOrderItemStatus.Reported, ct);
+
+        return new RadiologyStatsResponse
+        {
+            ScheduledCount = scheduled,
+            AcquiredCount = acquired,
+            ReportedCount = reported
+        };
+    }
+
+    private async Task ValidateAccessAsync(CancellationToken ct)
+    {
+        var settings = await _db.FacilitySettings.AsNoTracking().FirstOrDefaultAsync(ct);
+        if (settings != null && !settings.IsRadiologyEnabled)
+        {
+            throw new AppException("Radiology module is disabled.");
+        }
+
+        var userRole = _currentUser.Role;
+        if (userRole != Roles.SuperAdmin && userRole != Roles.Admin)
+        {
+            if (_currentUser.Department == "Laboratory")
+            {
+                throw new ForbiddenException("Laboratory staff cannot access Radiology data.");
+            }
+        }
+    }
 }

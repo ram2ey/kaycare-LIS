@@ -9,3 +9,6 @@ export const getResultByAccession = (accession: string) =>
 
 export const getResult = (id: string) =>
   apiClient.get<LabResultSummary>(`/lab-results/${id}`).then((r) => r.data)
+
+export const simulateHl7Message = (rawHl7: string) =>
+  apiClient.post<{ success: boolean }>('/lab-results/simulate', { rawHl7 }).then((r) => r.data)

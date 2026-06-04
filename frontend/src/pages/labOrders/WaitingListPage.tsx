@@ -65,25 +65,30 @@ export function WaitingListPage() {
                         <tr key={o.labOrderId} className="border-b border-gray-50 hover:bg-gray-50">
                           <td className="px-5 py-3">
                             <Link to={`/lab-orders/${o.labOrderId}`} className="text-sky-600 hover:underline font-mono text-xs">
-                              {o.accessionNumber}
+                              {o.accessionNumber ?? 'N/A'}
                             </Link>
                           </td>
                           <td className="px-5 py-3">
                             <p className="font-medium text-gray-800">{o.patientName}</p>
-                            <p className="text-xs text-gray-400 font-mono">{o.mrn}</p>
+                            <p className="text-xs text-gray-400 font-mono">{o.patientMrn}</p>
                           </td>
                           <td className="px-5 py-3 text-gray-600 text-xs">
-                            {o.items.map((i) => i.testName).join(', ')}
+                            {o.testNames.join(', ')}
                           </td>
                           <td className="px-5 py-3">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              o.priority === 'STAT' ? 'bg-red-100 text-red-700' :
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              o.priority === 'STAT' ? 'bg-red-100 text-red-700 border border-red-200' :
                               o.priority === 'Urgent' ? 'bg-orange-100 text-orange-700' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>{o.priority}</span>
+                              'bg-gray-150 text-gray-600'
+                            }`}>{o.priority === 'STAT' && (
+                              <span className="relative flex h-1.5 w-1.5">
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                              </span>
+                            )}{o.priority}</span>
                           </td>
                           <td className="px-5 py-3 text-gray-500 text-xs">
-                            {new Date(o.createdAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                            {new Date(o.orderedAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                           </td>
                           <td className="px-5 py-3">
                             <Link

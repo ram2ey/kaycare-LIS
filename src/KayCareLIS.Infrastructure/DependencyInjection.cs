@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using KayCareLIS.Core.Interfaces;
 using KayCareLIS.Infrastructure.Data;
 using KayCareLIS.Infrastructure.Services;
@@ -6,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QuestPDF.Infrastructure;
 using Azure.Storage.Blobs;
+
+[assembly: InternalsVisibleTo("KayCareLIS.UnitTests")]
 
 namespace KayCareLIS.Infrastructure;
 

@@ -30,6 +30,7 @@ public class TokenService : ITokenService
             new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
             new Claim("tenantId",           user.TenantId.ToString()),
             new Claim(ClaimTypes.Role,      roleName),
+            new Claim("department",         user.Department ?? string.Empty),
             new Claim("mustChangePassword", user.MustChangePassword.ToString().ToLower())
         };
 

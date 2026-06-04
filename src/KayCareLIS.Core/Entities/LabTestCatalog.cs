@@ -12,4 +12,5 @@ public class LabTestCatalog
     public bool    IsActive             { get; set; } = true;
     public string? DefaultUnit          { get; set; }
     public string? DefaultReferenceRange { get; set; }
+    public string? CriticalReferenceRange { get; set; }
 }

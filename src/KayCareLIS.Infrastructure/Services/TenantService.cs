@@ -30,6 +30,9 @@ public class TenantService : ITenantService
         if (await _db.Tenants.AnyAsync(t => t.TenantCode == req.TenantCode.ToLower(), ct))
             throw new ConflictException($"Tenant code '{req.TenantCode}' already exists.");
 
+        var adminRole = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin", ct)
+            ?? throw new NotFoundException("Admin role not found.");
+
         var tenant = new Tenant
         {
             TenantId         = Guid.NewGuid(),
@@ -43,6 +46,22 @@ public class TenantService : ITenantService
         };
         _db.Tenants.Add(tenant);
         await _db.SaveChangesAsync(ct);
+
+        var adminUser = new User
+        {
+            UserId             = Guid.NewGuid(),
+            TenantId           = tenant.TenantId,
+            RoleId             = adminRole.RoleId,
+            Email              = req.AdminEmail.Trim().ToLower(),
+            PasswordHash       = BCrypt.Net.BCrypt.HashPassword("Admin@1234", 12),
+            FirstName          = req.AdminFirstName.Trim(),
+            LastName           = req.AdminLastName.Trim(),
+            IsActive           = true,
+            MustChangePassword = true,
+        };
+        _db.Users.Add(adminUser);
+        await _db.SaveChangesAsync(ct);
+
         return Map(tenant);
     }
 

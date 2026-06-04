@@ -41,6 +41,8 @@ public class FacilitySettingsService : IFacilitySettingsService
                 Address = request.Address?.Trim(),
                 Phone = request.Phone?.Trim(),
                 Email = request.Email?.Trim(),
+                IsLaboratoryEnabled = request.IsLaboratoryEnabled,
+                IsRadiologyEnabled = request.IsRadiologyEnabled,
             };
             _db.FacilitySettings.Add(settings);
         }
@@ -50,6 +52,8 @@ public class FacilitySettingsService : IFacilitySettingsService
             settings.Address = request.Address?.Trim();
             settings.Phone = request.Phone?.Trim();
             settings.Email = request.Email?.Trim();
+            settings.IsLaboratoryEnabled = request.IsLaboratoryEnabled;
+            settings.IsRadiologyEnabled = request.IsRadiologyEnabled;
         }
 
         await _db.SaveChangesAsync(ct);
@@ -128,6 +132,8 @@ public class FacilitySettingsService : IFacilitySettingsService
         LogoUrl            = string.IsNullOrEmpty(s.LogoBlobName)
             ? null
             : _blob.GenerateSasUri(ContainerName(), s.LogoBlobName, LogoSasExpiry).ToString(),
+        IsLaboratoryEnabled = s.IsLaboratoryEnabled,
+        IsRadiologyEnabled = s.IsRadiologyEnabled,
         UpdatedAt          = s.UpdatedAt,
     };
 }

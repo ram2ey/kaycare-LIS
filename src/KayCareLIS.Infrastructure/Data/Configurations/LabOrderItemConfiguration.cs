@@ -23,5 +23,6 @@ public class LabOrderItemConfiguration : IEntityTypeConfiguration<LabOrderItem>
         builder.HasIndex(i => new { i.TenantId, i.AccessionNumber }).IsUnique().HasFilter("[AccessionNumber] IS NOT NULL");
         builder.HasOne(i => i.LabTestCatalog).WithMany().HasForeignKey(i => i.LabTestCatalogId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(i => i.LabResult).WithOne(r => r.LabOrderItem).HasForeignKey<LabResult>(r => r.LabOrderItemId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(i => i.CriticalCallLog).WithOne(c => c.LabOrderItem).HasForeignKey<CriticalCallLog>(c => c.LabOrderItemId).OnDelete(DeleteBehavior.Cascade);
     }
 }

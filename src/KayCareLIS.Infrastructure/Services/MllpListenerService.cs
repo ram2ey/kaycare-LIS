@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text;
 using KayCareLIS.Core.Constants;
 using KayCareLIS.Core.Entities;
+using KayCareLIS.Core.Interfaces;
 using KayCareLIS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -115,99 +116,17 @@ public class MllpListenerService : BackgroundService
     private async Task ProcessMessageAsync(string rawMessage, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var labResults = scope.ServiceProvider.GetRequiredService<ILabResultService>();
 
-        // Determine tenantId from ORC/PID — for simplicity use first active tenant
-        // In production, segment MSH-5 / MSH-6 would carry the tenant identifier
-        var tenant = await db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.IsActive, ct);
-        if (tenant == null) return;
-
-        var parsed = Hl7Parser.ParseOruR01(rawMessage, tenant.TenantId);
-        if (parsed == null)
+        var success = await labResults.ProcessHl7MessageAsync(rawMessage, ct);
+        if (success)
         {
-            _logger.LogWarning("Could not parse HL7 message — missing accession number");
-            return;
+            _logger.LogInformation("HL7 result parsed and saved successfully via MLLP listener.");
         }
-
-        // Try to match to an open LabOrderItem by AccessionNumber
-        var orderItem = await db.LabOrderItems
-            .FirstOrDefaultAsync(i => i.AccessionNumber == parsed.AccessionNumber
-                && i.TenantId == tenant.TenantId, ct);
-
-        Guid? patientId          = null;
-        Guid? orderingDoctorId   = null;
-
-        if (orderItem != null)
+        else
         {
-            var order = await db.LabOrders.AsNoTracking()
-                .FirstOrDefaultAsync(o => o.LabOrderId == orderItem.LabOrderId, ct);
-            if (order != null)
-            {
-                patientId        = order.PatientId;
-                orderingDoctorId = order.OrderingDoctorUserId;
-            }
+            _logger.LogWarning("HL7 message processing failed or duplicate accession received.");
         }
-
-        // If we still have no patient, try MRN lookup from PID segment
-        if (patientId == null && !string.IsNullOrEmpty(parsed.Hl7PatientId))
-        {
-            var patient = await db.Patients.AsNoTracking()
-                .FirstOrDefaultAsync(p => p.MedicalRecordNumber == parsed.Hl7PatientId
-                    && p.TenantId == tenant.TenantId, ct);
-            patientId = patient?.PatientId;
-        }
-
-        if (patientId == null)
-        {
-            _logger.LogWarning("HL7 message accession {Acc} — could not resolve patient", parsed.AccessionNumber);
-            return;
-        }
-
-        // Check for duplicate accession
-        var existing = await db.LabResults
-            .FirstOrDefaultAsync(r => r.AccessionNumber == parsed.AccessionNumber
-                && r.TenantId == tenant.TenantId, ct);
-
-        if (existing != null)
-        {
-            _logger.LogInformation("Duplicate HL7 message for accession {Acc} — ignoring", parsed.AccessionNumber);
-            return;
-        }
-
-        var result = new LabResult
-        {
-            LabResultId          = Guid.NewGuid(),
-            PatientId            = patientId.Value,
-            OrderingDoctorUserId = orderingDoctorId,
-            AccessionNumber      = parsed.AccessionNumber,
-            OrderCode            = parsed.OrderCode,
-            OrderName            = parsed.OrderName,
-            OrderedAt            = parsed.OrderedAt,
-            ReceivedAt           = DateTime.UtcNow,
-            Status               = LabResultStatus.Received,
-            RawHl7               = parsed.RawMessage,
-            LabOrderItemId       = orderItem?.LabOrderItemId,
-        };
-        db.LabResults.Add(result);
-        await db.SaveChangesAsync(ct);
-
-        foreach (var obs in parsed.Observations)
-        {
-            obs.LabResultId = result.LabResultId;
-            db.LabObservations.Add(obs);
-        }
-        await db.SaveChangesAsync(ct);
-
-        // Update linked LabOrderItem status
-        if (orderItem != null)
-        {
-            orderItem.LabResultId = result.LabResultId;
-            orderItem.Status      = LabOrderItemStatus.Resulted;
-            orderItem.ResultedAt  = DateTime.UtcNow;
-            await db.SaveChangesAsync(ct);
-        }
-
-        _logger.LogInformation("HL7 result saved: accession {Acc}, {Count} observations", parsed.AccessionNumber, parsed.Observations.Count);
     }
 
     private static async Task SendAckAsync(NetworkStream stream, string ackCode, CancellationToken ct)

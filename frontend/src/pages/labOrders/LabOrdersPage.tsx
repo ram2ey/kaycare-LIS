@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getLabOrdersForPatient } from '../../api/labOrders'
 import { searchPatients } from '../../api/patients'
+import { useDebounce } from '../../hooks/useDebounce'
 import type { LabOrderSummary } from '../../types/labOrders'
 import { ORDER_STATUS_COLORS } from '../../types/labOrders'
 
@@ -15,6 +16,8 @@ export function LabOrdersPage() {
   const [suggestions, setSuggestions] = useState<{ patientId: string; name: string; mrn: string }[]>([])
   const [loading, setLoading] = useState(false)
 
+  const debouncedQuery = useDebounce(patientQuery, 250)
+
   useEffect(() => {
     if (selectedPatientId) {
       setLoading(true)
@@ -22,12 +25,23 @@ export function LabOrdersPage() {
     }
   }, [selectedPatientId])
 
-  async function handlePatientSearch(q: string) {
-    setPatientQuery(q)
-    if (q.length < 2) { setSuggestions([]); return }
-    const res = await searchPatients(q, 1, 6)
-    setSuggestions(res.items.map((p) => ({ patientId: p.patientId, name: `${p.firstName} ${p.lastName}`, mrn: p.mrn })))
-  }
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      setSuggestions([])
+      return
+    }
+    if (debouncedQuery.includes('(')) return
+
+    searchPatients(debouncedQuery, 1, 6).then((res) => {
+      setSuggestions(
+        res.items.map((p) => ({
+          patientId: p.patientId,
+          name: `${p.firstName} ${p.lastName}`,
+          mrn: p.mrn,
+        }))
+      )
+    })
+  }, [debouncedQuery])
 
   return (
     <div className="p-6">
@@ -47,7 +61,7 @@ export function LabOrdersPage() {
           type="text"
           placeholder="Search patient by name or MRN…"
           value={patientQuery}
-          onChange={(e) => handlePatientSearch(e.target.value)}
+          onChange={(e) => setPatientQuery(e.target.value)}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
         />
         {suggestions.length > 0 && (
@@ -95,14 +109,19 @@ export function LabOrdersPage() {
                   className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigate(`/lab-orders/${o.labOrderId}`)}
                 >
-                  <td className="px-5 py-3 font-mono text-xs text-sky-700">{o.accessionNumber}</td>
-                  <td className="px-5 py-3 text-gray-600 text-xs">{o.items.map((i) => i.testName).join(', ')}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-sky-700">{o.accessionNumber ?? 'N/A'}</td>
+                  <td className="px-5 py-3 text-gray-600 text-xs">{o.testNames.join(', ')}</td>
                   <td className="px-5 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      o.priority === 'STAT' ? 'bg-red-100 text-red-700' :
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      o.priority === 'STAT' ? 'bg-red-100 text-red-700 border border-red-200' :
                       o.priority === 'Urgent' ? 'bg-orange-100 text-orange-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>{o.priority}</span>
+                      'bg-gray-150 text-gray-600'
+                    }`}>{o.priority === 'STAT' && (
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                      </span>
+                    )}{o.priority}</span>
                   </td>
                   <td className="px-5 py-3">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${ORDER_STATUS_COLORS[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -110,7 +129,7 @@ export function LabOrdersPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-gray-500 text-xs">
-                    {new Date(o.createdAt).toLocaleDateString('en-GB')}
+                    {new Date(o.orderedAt).toLocaleDateString('en-GB')}
                   </td>
                 </tr>
               ))}

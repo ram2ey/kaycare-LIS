@@ -9,5 +9,7 @@ public class FacilitySettingsResponse
     public string? Email              { get; set; }
     public string? LogoUrl            { get; set; }
     public bool    HasLogo            { get; set; }
+    public bool    IsLaboratoryEnabled { get; set; } = true;
+    public bool    IsRadiologyEnabled { get; set; } = true;
     public DateTime UpdatedAt         { get; set; }
 }

@@ -1,6 +1,7 @@
 using KayCareLIS.Core.Constants;
 using KayCareLIS.Core.DTOs.LabOrders;
 using KayCareLIS.Core.Interfaces;
+using KayCareLIS.Core.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,8 +22,57 @@ public class LabOrdersController : ControllerBase
     }
 
     [HttpGet("catalog")]
-    public async Task<IActionResult> GetCatalog(CancellationToken ct)
-        => Ok(await _labOrders.GetTestCatalogAsync(ct));
+    public async Task<IActionResult> GetCatalog([FromQuery] bool includeInactive, CancellationToken ct)
+        => Ok(await _labOrders.GetTestCatalogAsync(includeInactive, ct));
+
+    [HttpPost("catalog")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> CreateCatalogItem([FromBody] CreateLabTestCatalogRequest req, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _labOrders.CreateTestCatalogItemAsync(req, ct);
+            return CreatedAtAction(nameof(GetCatalog), new { includeInactive = true }, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("catalog/{id:guid}")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> UpdateCatalogItem(Guid id, [FromBody] UpdateLabTestCatalogRequest req, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _labOrders.UpdateTestCatalogItemAsync(id, req, ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("catalog/{id:guid}")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> DeleteCatalogItem(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _labOrders.DeleteTestCatalogItemAsync(id, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 
     [HttpGet("waiting-list")]
     public async Task<IActionResult> GetWaitingList(
@@ -75,5 +125,28 @@ public class LabOrdersController : ControllerBase
         var pdf = await _labReport.GenerateLabOrderReportAsync(id, ct);
         if (pdf == null) return NotFound();
         return File(pdf, "application/pdf", $"lab-report-{id:N}.pdf");
+    }
+
+    [HttpGet("critical-alerts")]
+    public async Task<IActionResult> GetCriticalAlerts(CancellationToken ct)
+        => Ok(await _labOrders.GetCriticalAlertsAsync(ct));
+
+    [HttpPost("items/{itemId:guid}/critical-log")]
+    [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.LabTechnician},{Roles.Doctor}")]
+    public async Task<IActionResult> RecordCriticalCallLog(Guid itemId, [FromBody] CreateCriticalCallLogRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _labOrders.RecordCriticalCallLogAsync(itemId, request, ct);
+            return Ok(result);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

@@ -26,5 +26,6 @@ public class CurrentUserService : ICurrentUserService
                               ?? User?.FindFirstValue(ClaimTypes.Email)
                               ?? string.Empty;
     public string Role     => User?.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    public string? Department => User?.FindFirstValue("department");
     public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
 }

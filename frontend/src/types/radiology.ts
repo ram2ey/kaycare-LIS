@@ -88,3 +88,9 @@ export const ITEM_STATUS_COLORS: Record<string, string> = {
 }
 
 export const PRIORITY_OPTIONS = ['Routine', 'Urgent', 'STAT'] as const
+
+export interface RadiologyStatsResponse {
+  scheduledCount: number
+  acquiredCount: number
+  reportedCount: number
+}

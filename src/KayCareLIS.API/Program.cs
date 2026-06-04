@@ -103,6 +103,7 @@ app.Use(async (ctx, next) =>
     }
 });
 
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 

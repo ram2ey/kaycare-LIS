@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { searchPatients } from '../../api/patients'
+import { useDebounce } from '../../hooks/useDebounce'
 import type { PatientSummary } from '../../types/patients'
 
 export function PatientsPage() {
@@ -12,6 +13,8 @@ export function PatientsPage() {
   const [loading, setLoading] = useState(false)
   const pageSize = 20
 
+  const debouncedQuery = useDebounce(query, 300)
+
   const load = useCallback((q: string, p: number) => {
     setLoading(true)
     searchPatients(q || undefined, p, pageSize)
@@ -22,7 +25,13 @@ export function PatientsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  useEffect(() => { load(query, page) }, [load, query, page])
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedQuery])
+
+  useEffect(() => {
+    load(debouncedQuery, page)
+  }, [load, debouncedQuery, page])
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

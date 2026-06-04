@@ -24,6 +24,10 @@ public class RadiologyOrdersController : ControllerBase
     public async Task<IActionResult> GetCatalog(CancellationToken ct)
         => Ok(await _radiology.GetProcedureCatalogAsync(ct));
 
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats(CancellationToken ct)
+        => Ok(await _radiology.GetStatsAsync(ct));
+
     [HttpGet("worklist")]
     public async Task<IActionResult> GetWorklist(
         [FromQuery] DateOnly? date,
@@ -56,7 +60,32 @@ public class RadiologyOrdersController : ControllerBase
     [HttpPost("items/{itemId:guid}/acquire")]
     [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.LabTechnician}")]
     public async Task<IActionResult> MarkAcquired(Guid itemId, CancellationToken ct)
-        => Ok(await _radiology.MarkAcquiredAsync(itemId, ct));
+        => Ok(await _radiology.MarkAcquiredAsync(itemId, null, ct));
+
+    [HttpPost("items/{itemId:guid}/pacs-upload")]
+    [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.LabTechnician}")]
+    public async Task<IActionResult> UploadPacsStudy(Guid itemId, [FromForm] Microsoft.AspNetCore.Http.IFormFile file, CancellationToken ct)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No scan file uploaded." });
+
+        var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        var pacsDir = Path.Combine(wwwrootPath, "pacs-studies");
+        if (!Directory.Exists(pacsDir))
+        {
+            Directory.CreateDirectory(pacsDir);
+        }
+
+        var filePath = Path.Combine(pacsDir, $"{itemId}.png");
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream, ct);
+        }
+
+        var pacsUrl = $"/pacs-studies/{itemId}.png";
+        var result = await _radiology.MarkAcquiredAsync(itemId, pacsUrl, ct);
+        return Ok(result);
+    }
 
     [HttpPost("items/{itemId:guid}/report")]
     [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Doctor}")]

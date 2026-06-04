@@ -28,6 +28,10 @@ public class LabOrderItem
 
     public Guid? LabResultId { get; set; }
 
+    public bool IsCritical { get; set; }
+    public Guid? CriticalCallLogId { get; set; }
+    public CriticalCallLog? CriticalCallLog { get; set; }
+
     public LabOrder       LabOrder        { get; set; } = null!;
     public LabTestCatalog LabTestCatalog  { get; set; } = null!;
     public LabResult?     LabResult       { get; set; }

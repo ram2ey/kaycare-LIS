@@ -6,5 +6,6 @@ public interface ICurrentUserService
     Guid   TenantId      { get; }
     string Email         { get; }
     string Role          { get; }
+    string? Department   { get; }
     bool   IsAuthenticated { get; }
 }

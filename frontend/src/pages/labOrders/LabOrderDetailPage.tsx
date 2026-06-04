@@ -6,6 +6,7 @@ import {
   enterManualResult,
   signItem,
   downloadLabReport,
+  recordCriticalCallLog,
 } from '../../api/labOrders'
 import type { LabOrderDetail, LabOrderItemResponse } from '../../types/labOrders'
 import { ORDER_STATUS_COLORS, ITEM_STATUS_COLORS, FLAG_COLORS } from '../../types/labOrders'
@@ -20,6 +21,10 @@ export function LabOrderDetailPage() {
   const [resultItem, setResultItem] = useState<LabOrderItemResponse | null>(null)
   const [resultForm, setResultForm] = useState({ value: '', unit: '', referenceRange: '', notes: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [callLogItem, setCallLogItem] = useState<LabOrderItemResponse | null>(null)
+  const [callLogForm, setCallLogForm] = useState({ recipientName: '', notes: 'Read-back confirmed' })
+  const [callLogSubmitting, setCallLogSubmitting] = useState(false)
+  const [callLogError, setCallLogError] = useState<string | null>(null)
 
   function load() {
     if (!id) return
@@ -60,6 +65,30 @@ export function LabOrderDetailPage() {
     load()
   }
 
+  async function handleRecordCallLog(e: React.FormEvent) {
+    e.preventDefault()
+    if (!callLogItem) return
+    if (!callLogForm.recipientName.trim()) {
+      setCallLogError('Recipient clinician name is required.')
+      return
+    }
+
+    setCallLogSubmitting(true)
+    setCallLogError(null)
+    try {
+      await recordCriticalCallLog(callLogItem.labOrderItemId, {
+        recipientName: callLogForm.recipientName.trim(),
+        notes: callLogForm.notes.trim(),
+      })
+      setCallLogItem(null)
+      load()
+    } catch (err: any) {
+      setCallLogError(err.response?.data?.message || 'Failed to record call log.')
+    } finally {
+      setCallLogSubmitting(false)
+    }
+  }
+
   async function handleDownloadReport() {
     if (!id) return
     const blob = await downloadLabReport(id)
@@ -93,16 +122,21 @@ export function LabOrderDetailPage() {
             <span className={`px-2.5 py-1 rounded text-xs font-medium ${ORDER_STATUS_COLORS[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
               {order.status}
             </span>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-              order.priority === 'STAT' ? 'bg-red-100 text-red-700' :
+            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+              order.priority === 'STAT' ? 'bg-red-100 text-red-700 border border-red-200' :
               order.priority === 'Urgent' ? 'bg-orange-100 text-orange-700' :
-              'bg-gray-100 text-gray-600'
-            }`}>{order.priority}</span>
+              'bg-gray-150 text-gray-600'
+            }`}>{order.priority === 'STAT' && (
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+              </span>
+            )}{order.priority}</span>
           </div>
           <p className="text-gray-600 text-sm">
-            {order.patientName} · <span className="font-mono text-xs">{order.mrn}</span>
+            {order.patientName} · <span className="font-mono text-xs">{order.patientMrn}</span>
           </p>
-          <p className="text-gray-400 text-xs mt-0.5">Ordered by {order.orderingDoctorName} · {new Date(order.createdAt).toLocaleString('en-GB')}</p>
+          <p className="text-gray-400 text-xs mt-0.5">Ordered by {order.orderingDoctorName} · {new Date(order.orderedAt).toLocaleString('en-GB')}</p>
         </div>
         <div className="flex gap-2">
           {canReceiveSample && (
@@ -157,15 +191,34 @@ export function LabOrderDetailPage() {
               const canSignOff = canSign && item.status === 'Resulted'
 
               return (
-                <tr key={item.labOrderItemId} className="border-b border-gray-50">
+                <tr key={item.labOrderItemId} className={`border-b transition-colors ${item.isCritical ? 'bg-red-50/40 border-red-200 animate-pulse-subtle' : 'border-gray-50 hover:bg-sky-50/20'}`}>
                   <td className="px-5 py-3">
-                    <p className="font-medium text-gray-800">{item.testName}</p>
-                    <p className="text-xs text-gray-400 font-mono">{item.testCode}</p>
+                    <div className="flex items-center gap-1.5">
+                      {item.isCritical && (
+                        <span className="text-red-600 text-sm" title="Critical Panic Value">⚠️</span>
+                      )}
+                      <div>
+                        <p className="font-semibold text-gray-805">{item.testName}</p>
+                        <p className="text-xs text-gray-400 font-mono">{item.testCode}</p>
+                      </div>
+                    </div>
+                    {item.isCritical && item.criticalCallLogId && (
+                      <div className="mt-2 text-[10px] text-green-800 bg-green-50/90 border border-green-150 rounded-lg p-2 font-medium leading-relaxed max-w-xs">
+                        <div className="font-bold flex items-center gap-1">
+                          <span>📞</span> Clinician Called & Verified
+                        </div>
+                        <div>Recipient: {item.criticalCallLogRecipient}</div>
+                        <div>Called at: {new Date(item.criticalCallLogCalledAt!).toLocaleString('en-GB')}</div>
+                        <div className="italic text-gray-500">"{item.criticalCallLogNotes}"</div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-5 py-3 text-gray-500 text-xs">{item.department}</td>
                   <td className="px-5 py-3">
                     {result ? (
-                      <span className="font-medium text-gray-800">{result} {unit}</span>
+                      <span className={`font-semibold ${item.isCritical ? 'text-red-700 bg-red-105 px-1.5 py-0.5 rounded font-bold' : 'text-gray-800'}`}>
+                        {result} {unit}
+                      </span>
                     ) : (
                       <span className="text-gray-300">—</span>
                     )}
@@ -184,35 +237,49 @@ export function LabOrderDetailPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3">
-                    {canEnterResult && (
-                      <button
-                        onClick={() => {
-                          setResultItem(item)
-                          setResultForm({
-                            value: '',
-                            unit: item.manualResultUnit ?? '',
-                            referenceRange: item.manualResultReferenceRange ?? '',
-                            notes: '',
-                          })
-                        }}
-                        className="text-sky-600 hover:underline text-xs font-medium"
-                      >
-                        Enter Result
-                      </button>
-                    )}
-                    {canSignOff && (
-                      <button
-                        onClick={() => handleSign(item.labOrderItemId)}
-                        className="text-green-600 hover:underline text-xs font-medium ml-2"
-                      >
-                        Sign
-                      </button>
-                    )}
-                    {item.signedAt && (
-                      <span className="text-gray-400 text-xs">
-                        Signed {new Date(item.signedAt).toLocaleDateString('en-GB')}
-                      </span>
-                    )}
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {canEnterResult && (
+                        <button
+                          onClick={() => {
+                            setResultItem(item)
+                            setResultForm({
+                              value: '',
+                              unit: item.manualResultUnit ?? '',
+                              referenceRange: item.manualResultReferenceRange ?? '',
+                              notes: '',
+                            })
+                          }}
+                          className="text-sky-600 hover:underline text-xs font-medium"
+                        >
+                          Enter Result
+                        </button>
+                      )}
+                      {canSignOff && (
+                        <button
+                          onClick={() => handleSign(item.labOrderItemId)}
+                          className="text-green-600 hover:underline text-xs font-medium"
+                        >
+                          Sign
+                        </button>
+                      )}
+                      {item.signedAt && (
+                        <span className="text-gray-400 text-xs">
+                          Signed {new Date(item.signedAt).toLocaleDateString('en-GB')}
+                        </span>
+                      )}
+                      {item.isCritical && !item.criticalCallLogId && (
+                        <button
+                          onClick={() => {
+                            setCallLogItem(item)
+                            setCallLogForm({ recipientName: '', notes: 'Read-back confirmed' })
+                            setCallLogError(null)
+                          }}
+                          className="bg-red-600 hover:bg-red-500 text-white font-bold text-[10px] px-2 py-1 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-1"
+                        >
+                          <span>📞</span> Log Call
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )
@@ -278,6 +345,84 @@ export function LabOrderDetailPage() {
                   className="flex-1 bg-sky-700 text-white rounded-lg py-2 text-sm font-medium hover:bg-sky-800 disabled:opacity-60"
                 >
                   {submitting ? 'Saving…' : 'Save Result'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Log Call Modal */}
+      {callLogItem && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-gray-150 shadow-2xl max-w-sm w-full overflow-hidden animate-scale-up">
+            <div className="bg-red-600 p-4 text-white">
+              <h3 className="font-extrabold text-sm flex items-center gap-2">
+                📞 Record Critical Value Call Log
+              </h3>
+              <p className="text-red-105 text-[10px] mt-1">
+                CLIA/CAP regulatory compliance read-back confirmation.
+              </p>
+            </div>
+
+            <form onSubmit={handleRecordCallLog} className="p-5 space-y-4">
+              {callLogError && (
+                <div className="bg-red-50 border border-red-200 text-red-800 text-xs rounded-xl p-3 font-semibold">
+                  ⚠️ {callLogError}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-gray-600 uppercase">Test & Result</label>
+                <div className="bg-red-50/50 border border-red-100 rounded-xl p-2.5 text-xs text-red-955 font-bold">
+                  {callLogItem.testName}: {callLogItem.manualResultValue || callLogItem.hl7ResultValue} {callLogItem.manualResultUnit || callLogItem.hl7ResultUnit}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="modalRecipientName" className="block text-xs font-bold text-gray-700 uppercase">
+                  Recipient Clinician Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="modalRecipientName"
+                  type="text"
+                  required
+                  placeholder="e.g. Dr. Jane Smith"
+                  value={callLogForm.recipientName}
+                  onChange={(e) => setCallLogForm({ ...callLogForm, recipientName: e.target.value })}
+                  className="w-full border border-gray-250 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="modalNotes" className="block text-xs font-bold text-gray-700 uppercase">
+                  Read-back Notes / Confirmation
+                </label>
+                <textarea
+                  id="modalNotes"
+                  rows={3}
+                  value={callLogForm.notes}
+                  onChange={(e) => setCallLogForm({ ...callLogForm, notes: e.target.value })}
+                  placeholder="e.g. Read-back confirmed."
+                  className="w-full border border-gray-250 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setCallLogItem(null)}
+                  disabled={callLogSubmitting}
+                  className="px-4 py-2 border border-gray-205 text-gray-650 font-semibold text-xs rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={callLogSubmitting}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+                >
+                  {callLogSubmitting ? 'Recording...' : 'Confirm Call Log'}
                 </button>
               </div>
             </form>

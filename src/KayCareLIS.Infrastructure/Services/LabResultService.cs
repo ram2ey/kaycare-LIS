@@ -1,4 +1,6 @@
+using KayCareLIS.Core.Constants;
 using KayCareLIS.Core.DTOs.LabResults;
+using KayCareLIS.Core.Entities;
 using KayCareLIS.Core.Exceptions;
 using KayCareLIS.Core.Interfaces;
 using KayCareLIS.Infrastructure.Data;
@@ -96,4 +98,100 @@ public class LabResultService : ILabResultService
             AbnormalFlag     = o.AbnormalFlag,
         }).ToList(),
     };
+
+    public async Task<bool> ProcessHl7MessageAsync(string rawMessage, CancellationToken ct)
+    {
+        var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.IsActive, ct);
+        if (tenant == null) return false;
+
+        var parsed = Hl7Parser.ParseOruR01(rawMessage, tenant.TenantId);
+        if (parsed == null) return false;
+
+        // Try to match to an open LabOrderItem by AccessionNumber
+        var orderItem = await _db.LabOrderItems
+            .FirstOrDefaultAsync(i => i.AccessionNumber == parsed.AccessionNumber
+                && i.TenantId == tenant.TenantId, ct);
+
+        Guid? patientId          = null;
+        Guid? orderingDoctorId   = null;
+
+        if (orderItem != null)
+        {
+            var order = await _db.LabOrders.AsNoTracking()
+                .FirstOrDefaultAsync(o => o.LabOrderId == orderItem.LabOrderId, ct);
+            if (order != null)
+            {
+                patientId        = order.PatientId;
+                orderingDoctorId = order.OrderingDoctorUserId;
+            }
+        }
+
+        // If we still have no patient, try MRN lookup from PID segment
+        if (patientId == null && !string.IsNullOrEmpty(parsed.Hl7PatientId))
+        {
+            var patient = await _db.Patients.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.MedicalRecordNumber == parsed.Hl7PatientId
+                    && p.TenantId == tenant.TenantId, ct);
+            patientId = patient?.PatientId;
+        }
+
+        if (patientId == null) return false;
+
+        // Check for duplicate accession
+        var existing = await _db.LabResults
+            .FirstOrDefaultAsync(r => r.AccessionNumber == parsed.AccessionNumber
+                && r.TenantId == tenant.TenantId, ct);
+
+        if (existing != null) return false;
+
+        var result = new Core.Entities.LabResult
+        {
+            LabResultId          = Guid.NewGuid(),
+            PatientId            = patientId.Value,
+            OrderingDoctorUserId = orderingDoctorId,
+            AccessionNumber      = parsed.AccessionNumber,
+            OrderCode            = parsed.OrderCode,
+            OrderName            = parsed.OrderName,
+            OrderedAt            = parsed.OrderedAt,
+            ReceivedAt           = DateTime.UtcNow,
+            Status               = LabResultStatus.Received,
+            RawHl7               = parsed.RawMessage,
+            LabOrderItemId       = orderItem?.LabOrderItemId,
+            TenantId             = tenant.TenantId,
+        };
+        _db.LabResults.Add(result);
+        await _db.SaveChangesAsync(ct);
+
+        var hasCritical = false;
+        foreach (var obs in parsed.Observations)
+        {
+            obs.LabResultId = result.LabResultId;
+            
+            var catalogItem = await _db.LabTestCatalog
+                .FirstOrDefaultAsync(t => t.TestCode == obs.TestCode, ct);
+            if (catalogItem != null && !string.IsNullOrWhiteSpace(catalogItem.CriticalReferenceRange))
+            {
+                obs.IsCritical = LabOrderService.IsValueCritical(obs.Value, catalogItem.CriticalReferenceRange);
+                if (obs.IsCritical)
+                {
+                    hasCritical = true;
+                }
+            }
+
+            _db.LabObservations.Add(obs);
+        }
+        await _db.SaveChangesAsync(ct);
+
+        // Update linked LabOrderItem status
+        if (orderItem != null)
+        {
+            orderItem.LabResultId = result.LabResultId;
+            orderItem.Status      = LabOrderItemStatus.Resulted;
+            orderItem.ResultedAt  = DateTime.UtcNow;
+            orderItem.IsCritical  = hasCritical;
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return true;
+    }
 }

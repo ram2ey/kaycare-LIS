@@ -11,6 +11,7 @@ export interface LoginResponse {
   firstName: string
   lastName: string
   role: string
+  department: string | null
   mustChangePassword: boolean
 }
 
@@ -26,6 +27,7 @@ export interface AuthUser {
   firstName: string
   lastName: string
   role: string
+  department: string | null
   mustChangePassword: boolean
   tenantCode: string
 }

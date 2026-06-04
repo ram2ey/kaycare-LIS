@@ -15,6 +15,8 @@ public class FacilitySettingsConfiguration : IEntityTypeConfiguration<FacilitySe
         builder.Property(f => f.Phone).HasMaxLength(50);
         builder.Property(f => f.Email).HasMaxLength(200);
         builder.Property(f => f.LogoBlobName).HasMaxLength(200);
+        builder.Property(f => f.IsLaboratoryEnabled).HasDefaultValue(true);
+        builder.Property(f => f.IsRadiologyEnabled).HasDefaultValue(true);
         builder.Property(f => f.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
         builder.Property(f => f.UpdatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
         builder.HasIndex(f => f.TenantId).IsUnique();

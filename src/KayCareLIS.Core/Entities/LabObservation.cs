@@ -13,6 +13,7 @@ public class LabObservation
     public string? Units          { get; set; }
     public string? ReferenceRange { get; set; }
     public string? AbnormalFlag   { get; set; }
+    public bool    IsCritical     { get; set; }
 
     public LabResult LabResult { get; set; } = null!;
 }

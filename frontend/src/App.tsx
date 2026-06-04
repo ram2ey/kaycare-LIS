@@ -30,9 +30,12 @@ import { UsersPage } from './pages/admin/UsersPage'
 import { DepartmentsPage } from './pages/admin/DepartmentsPage'
 import { FacilitySettingsPage } from './pages/admin/FacilitySettingsPage'
 import { AuditLogsPage } from './pages/admin/AuditLogsPage'
+import { TenantsPage } from './pages/admin/TenantsPage'
+import { LabTestCatalogPage } from './pages/admin/LabTestCatalogPage'
 
 const ADMIN = ['SuperAdmin', 'Admin']
 const BILLING = ['SuperAdmin', 'Admin', 'BillingOfficer', 'Receptionist']
+const SUPER_ADMIN = ['SuperAdmin']
 
 export default function App() {
   return (
@@ -78,6 +81,8 @@ export default function App() {
               <Route path="users" element={<ProtectedRoute roles={ADMIN}><UsersPage /></ProtectedRoute>} />
               <Route path="departments" element={<ProtectedRoute roles={ADMIN}><DepartmentsPage /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute roles={ADMIN}><FacilitySettingsPage /></ProtectedRoute>} />
+              <Route path="tenants" element={<ProtectedRoute roles={SUPER_ADMIN}><TenantsPage /></ProtectedRoute>} />
+              <Route path="catalog" element={<ProtectedRoute roles={ADMIN}><LabTestCatalogPage /></ProtectedRoute>} />
             </Route>
 
             <Route path="audit-logs" element={<ProtectedRoute roles={ADMIN}><AuditLogsPage /></ProtectedRoute>} />

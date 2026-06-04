@@ -3,10 +3,12 @@ export interface LabTestCatalogItem {
   testCode: string
   testName: string
   department: string
-  sampleType: string
-  turnaroundHours: number
+  instrumentType: string | null
+  isManualEntry: boolean
+  tatHours: number
   defaultUnit: string | null
   defaultReferenceRange: string | null
+  criticalReferenceRange?: string | null
   isActive: boolean
 }
 
@@ -31,6 +33,15 @@ export interface LabOrderItemResponse {
   hl7ResultUnit: string | null
   hl7Flag: string | null
   hl7ResultedAt: string | null
+  isCritical?: boolean
+  criticalCallLogId?: string | null
+  criticalCallLogRecipient?: string | null
+  criticalCallLogNotes?: string | null
+  criticalCallLogCalledAt?: string | null
+  accessionNumber?: string | null
+  patientName?: string | null
+  patientMrn?: string | null
+  labOrderId?: string
 }
 
 export interface LabObservationResponse {
@@ -46,23 +57,22 @@ export interface LabObservationResponse {
 
 export interface LabOrderSummary {
   labOrderId: string
-  accessionNumber: string
+  accessionNumber?: string
   patientId: string
   patientName: string
-  mrn: string
+  patientMrn: string
   orderingDoctorUserId: string
   orderingDoctorName: string
   status: string
   priority: string
-  sampleCollectedAt: string | null
-  completedAt: string | null
-  createdAt: string
-  items: LabOrderItemResponse[]
+  orderedAt: string
+  testNames: string[]
 }
 
 export interface LabOrderDetail extends LabOrderSummary {
   clinicalNotes: string | null
   billId: string | null
+  items: LabOrderItemResponse[]
 }
 
 export interface CreateLabOrderRequest {
