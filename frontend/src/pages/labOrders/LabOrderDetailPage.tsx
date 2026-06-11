@@ -11,6 +11,7 @@ import {
 import type { LabOrderDetail, LabOrderItemResponse } from '../../types/labOrders'
 import { ORDER_STATUS_COLORS, ITEM_STATUS_COLORS, FLAG_COLORS } from '../../types/labOrders'
 import { useAuth } from '../../context/AuthContext'
+import { getLabInterpreter } from '../../api/ai'
 
 export function LabOrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -26,6 +27,11 @@ export function LabOrderDetailPage() {
   const [callLogSubmitting, setCallLogSubmitting] = useState(false)
   const [callLogError, setCallLogError] = useState<string | null>(null)
 
+  // AI Interpretation state
+  const [interpreterOpen, setInterpreterOpen] = useState(false)
+  const [interpretation, setInterpretation] = useState('')
+  const [interpretationLoading, setInterpretationLoading] = useState(false)
+
   function load() {
     if (!id) return
     setLoading(true)
@@ -33,6 +39,28 @@ export function LabOrderDetailPage() {
   }
 
   useEffect(() => { load() }, [id])
+
+  async function handleInterpret() {
+    if (!order) return;
+    setInterpreterOpen(true);
+    setInterpretationLoading(true);
+    try {
+      const obsItems = order.items.map(o => ({
+        testCode: o.testCode,
+        testName: o.testName,
+        value: o.manualResultValue ?? o.hl7ResultValue ?? '',
+        unit: o.manualResultUnit ?? o.hl7ResultUnit ?? '',
+        refRange: o.manualResultReferenceRange ?? '',
+        flag: o.manualResultFlag ?? o.hl7Flag ?? '',
+      }));
+      const data = await getLabInterpreter(order.patientName, order.items[0]?.testName ?? 'Laboratory Results', obsItems);
+      setInterpretation(data.interpretation);
+    } catch (err) {
+      setInterpretation('Failed to interpret lab results. Please ensure results are entered and signed.');
+    } finally {
+      setInterpretationLoading(false);
+    }
+  }
 
   async function handleReceiveSample() {
     if (!id || !confirm('Mark sample as received?')) return
@@ -148,12 +176,20 @@ export function LabOrderDetailPage() {
             </button>
           )}
           {isCompleted && (
-            <button
-              onClick={handleDownloadReport}
-              className="bg-sky-700 hover:bg-sky-800 text-white px-3 py-1.5 rounded-lg text-sm font-medium"
-            >
-              Download Report
-            </button>
+            <>
+              <button
+                onClick={handleInterpret}
+                className="bg-indigo-650 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 cursor-pointer font-bold"
+              >
+                <span>✨ AI Insights</span>
+              </button>
+              <button
+                onClick={handleDownloadReport}
+                className="bg-sky-700 hover:bg-sky-800 text-white px-3 py-1.5 rounded-lg text-sm font-medium"
+              >
+                Download Report
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -426,6 +462,39 @@ export function LabOrderDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      {/* AI Interpretation Modal */}
+      {interpreterOpen && (
+        <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-2xl overflow-hidden flex flex-col animate-scale-up">
+            <div className="bg-indigo-650 p-5 text-white flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-base flex items-center gap-2">
+                  <span>🧪</span> AI Laboratory Interpretation
+                </h3>
+                <p className="text-indigo-100 text-xs mt-0.5">Automated clinical review of laboratory test observations.</p>
+              </div>
+              <button onClick={() => setInterpreterOpen(false)} className="text-white hover:text-indigo-105 text-2xl font-bold cursor-pointer">×</button>
+            </div>
+            <div className="flex-1 p-6 overflow-y-auto prose max-w-none text-sm text-gray-700">
+              {interpretationLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                  <div className="w-8 h-8 border-4 border-indigo-650 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-gray-400 font-medium text-xs">Analyzing lab values and reference markers...</p>
+                </div>
+              ) : (
+                <div className="whitespace-pre-line leading-relaxed">{interpretation}</div>
+              )}
+            </div>
+            <div className="bg-gray-50 border-t border-gray-100 p-4 flex justify-end gap-3">
+              <button
+                onClick={() => setInterpreterOpen(false)}
+                className="px-4 py-2 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs font-semibold cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
