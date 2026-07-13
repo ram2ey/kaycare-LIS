@@ -1,3 +1,4 @@
+﻿using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -18,17 +19,17 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     AuditLogId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    EntityType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    EntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Details = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
-                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    EntityType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    EntityId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Details = table.Column<string>(type: "text", nullable: true),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -39,15 +40,15 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "FacilitySettings",
                 columns: table => new
                 {
-                    FacilitySettingsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    FacilityName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    LogoBlobName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    FacilitySettingsId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    FacilityName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Phone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    LogoBlobName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -59,10 +60,10 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     IcdCodeId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Code = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Chapter = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Chapter = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -73,16 +74,16 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "LabTestCatalog",
                 columns: table => new
                 {
-                    LabTestCatalogId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    TestCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    TestName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    InstrumentType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    IsManualEntry = table.Column<bool>(type: "bit", nullable: false),
+                    LabTestCatalogId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    TestCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    TestName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    InstrumentType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    IsManualEntry = table.Column<bool>(type: "boolean", nullable: false),
                     TatHours = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DefaultUnit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    DefaultReferenceRange = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    DefaultUnit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    DefaultReferenceRange = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -93,35 +94,35 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "Patients",
                 columns: table => new
                 {
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    MedicalRecordNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    MiddleName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    MedicalRecordNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    MiddleName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
-                    Gender = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    BloodType = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: true),
-                    NationalId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    AlternatePhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    AddressLine1 = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    AddressLine2 = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    State = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    PostalCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Country = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: "GH"),
-                    EmergencyContactName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    EmergencyContactPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    EmergencyContactRelation = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    InsuranceProvider = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    InsurancePolicyNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    InsuranceGroupNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    RegisteredByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RegisteredAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    Gender = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    BloodType = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true),
+                    NationalId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    AlternatePhone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    AddressLine1 = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    AddressLine2 = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    State = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    PostalCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    Country = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false, defaultValue: "GH"),
+                    EmergencyContactName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    EmergencyContactPhone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    EmergencyContactRelation = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    InsuranceProvider = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    InsurancePolicyNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    InsuranceGroupNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    RegisteredByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RegisteredAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -133,9 +134,9 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     RoleId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RoleName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RoleName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -146,16 +147,16 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "Tenants",
                 columns: table => new
                 {
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    TenantCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    TenantName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Subdomain = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    SubscriptionPlan = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "standard"),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    TenantCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    TenantName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Subdomain = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    SubscriptionPlan = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "standard"),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     MaxUsers = table.Column<int>(type: "int", nullable: false),
                     StorageQuotaGB = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -166,24 +167,24 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
                     RoleId = table.Column<int>(type: "int", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    LicenseNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    MustChangePassword = table.Column<bool>(type: "bit", nullable: false),
-                    LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    LicenseNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    MustChangePassword = table.Column<bool>(type: "boolean", nullable: false),
+                    LastLoginAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     FailedLoginCount = table.Column<int>(type: "int", nullable: false),
-                    LockedUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    LockedUntil = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -206,23 +207,23 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "Appointments",
                 columns: table => new
                 {
-                    AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DoctorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ScheduledAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AppointmentId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DoctorUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ScheduledAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     DurationMinutes = table.Column<int>(type: "int", nullable: false),
-                    AppointmentType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "Scheduled"),
-                    ChiefComplaint = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    Room = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CancelledByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CancellationReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    AppointmentType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Scheduled"),
+                    ChiefComplaint = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Room = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Notes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    CancelledAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    CancelledByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CancellationReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -245,22 +246,22 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "Bills",
                 columns: table => new
                 {
-                    BillId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    BillNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "Draft"),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    BillId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    BillNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Draft"),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     TotalAmount = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
                     AdjustmentTotal = table.Column<decimal>(type: "decimal(12,2)", nullable: false, defaultValue: 0m),
                     DiscountAmount = table.Column<decimal>(type: "decimal(12,2)", nullable: false, defaultValue: 0m),
-                    DiscountReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    DiscountReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     PaidAmount = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    BalanceDue = table.Column<decimal>(type: "decimal(12,2)", nullable: false, computedColumnSql: "[TotalAmount] + [AdjustmentTotal] - [DiscountAmount] - [PaidAmount]", stored: true),
-                    IssuedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    BalanceDue = table.Column<decimal>(type: "decimal(12,2)", nullable: false, computedColumnSql: "\"TotalAmount\" + \"AdjustmentTotal\" - \"DiscountAmount\" - \"PaidAmount\"", stored: true),
+                    IssuedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -283,19 +284,19 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "PatientDocuments",
                 columns: table => new
                 {
-                    DocumentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UploadedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FileName = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: false),
-                    ContentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    DocumentId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UploadedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    FileName = table.Column<string>(type: "character varying(260)", maxLength: 260, nullable: false),
+                    ContentType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     FileSizeBytes = table.Column<long>(type: "bigint", nullable: false),
-                    Category = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "Other"),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    BlobPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    ContainerName = table.Column<string>(type: "nvarchar(63)", maxLength: 63, nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Other"),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    BlobPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    ContainerName = table.Column<string>(type: "character varying(63)", maxLength: 63, nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -318,13 +319,13 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "BillAdjustments",
                 columns: table => new
                 {
-                    BillAdjustmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    BillId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BillAdjustmentId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    BillId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    AdjustedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AdjustedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    AdjustedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AdjustedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -347,16 +348,16 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "BillItems",
                 columns: table => new
                 {
-                    ItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BillId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ItemId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    BillId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Category = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    TotalPrice = table.Column<decimal>(type: "decimal(12,2)", nullable: false, computedColumnSql: "[Quantity] * [UnitPrice]", stored: true),
-                    SourceType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SourceId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    TotalPrice = table.Column<decimal>(type: "decimal(12,2)", nullable: false, computedColumnSql: "\"Quantity\" * \"UnitPrice\"", stored: true),
+                    SourceType = table.Column<string>(type: "text", nullable: true),
+                    SourceId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -373,16 +374,16 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "LabOrders",
                 columns: table => new
                 {
-                    LabOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BillId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    OrderingDoctorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Organisation = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    LabOrderId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    BillId = table.Column<Guid>(type: "uuid", nullable: true),
+                    OrderingDoctorUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Organisation = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -411,17 +412,17 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "Payments",
                 columns: table => new
                 {
-                    PaymentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    BillId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PaymentId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    BillId = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Reference = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ReceivedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    PaymentMethod = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Reference = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    ReceivedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PaymentDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    Notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -444,27 +445,27 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "LabOrderItems",
                 columns: table => new
                 {
-                    LabOrderItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    LabOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    LabTestCatalogId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    InstrumentType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    IsManualEntry = table.Column<bool>(type: "bit", nullable: false),
+                    LabOrderItemId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    LabOrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    LabTestCatalogId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TestName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    InstrumentType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    IsManualEntry = table.Column<bool>(type: "boolean", nullable: false),
                     TatHours = table.Column<int>(type: "int", nullable: false),
-                    AccessionNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    SampleReceivedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ResultedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SignedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SignedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ManualResult = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ManualResultNotes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    ManualResultUnit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    ManualResultReferenceRange = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ManualResultFlag = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    LabResultId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    AccessionNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    SampleReceivedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    ResultedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    SignedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    SignedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ManualResult = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ManualResultNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    ManualResultUnit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    ManualResultReferenceRange = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    ManualResultFlag = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
+                    LabResultId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -487,20 +488,20 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "LabResults",
                 columns: table => new
                 {
-                    LabResultId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OrderingDoctorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    AccessionNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    OrderCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    OrderName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    OrderedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ReceivedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Received"),
-                    RawHl7 = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LabOrderItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    LabResultId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderingDoctorUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    AccessionNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrderCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    OrderName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    OrderedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    ReceivedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "Received"),
+                    RawHl7 = table.Column<string>(type: "text", nullable: true),
+                    LabOrderItemId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -529,16 +530,16 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "LabObservations",
                 columns: table => new
                 {
-                    LabObservationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    LabResultId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LabObservationId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    LabResultId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     SequenceNumber = table.Column<int>(type: "int", nullable: false),
-                    TestCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    TestName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Value = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Units = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    ReferenceRange = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    AbnormalFlag = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: true)
+                    TestCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    TestName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Value = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Units = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    ReferenceRange = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    AbnormalFlag = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -713,7 +714,7 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 table: "LabOrderItems",
                 columns: new[] { "TenantId", "AccessionNumber" },
                 unique: true,
-                filter: "[AccessionNumber] IS NOT NULL");
+                filter: "\"AccessionNumber\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LabOrders_BillId",
@@ -750,7 +751,7 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 table: "LabResults",
                 column: "LabOrderItemId",
                 unique: true,
-                filter: "[LabOrderItemId] IS NOT NULL");
+                filter: "\"LabOrderItemId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LabResults_OrderingDoctorUserId",
@@ -914,3 +915,5 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
         }
     }
 }
+
+

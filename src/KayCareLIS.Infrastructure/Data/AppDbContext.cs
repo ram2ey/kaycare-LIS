@@ -59,6 +59,39 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<RadiologyOrder>()    .HasQueryFilter(o => o.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<RadiologyOrderItem>().HasQueryFilter(i => i.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<CriticalCallLog>()   .HasQueryFilter(c => c.TenantId == _tenantContext.TenantId);
+
+        // SQL Server to PostgreSQL translation loop
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                var defaultSql = property.GetDefaultValueSql();
+                if (defaultSql != null)
+                {
+                    if (defaultSql.Contains("NEWSEQUENTIALID()", StringComparison.OrdinalIgnoreCase))
+                    {
+                        property.SetDefaultValueSql("gen_random_uuid()");
+                    }
+                    else if (defaultSql.Contains("SYSUTCDATETIME()", StringComparison.OrdinalIgnoreCase))
+                    {
+                        property.SetDefaultValueSql("CURRENT_TIMESTAMP");
+                    }
+                }
+
+                var computedSql = property.GetComputedColumnSql();
+                if (computedSql != null)
+                {
+                    var newComputedSql = computedSql.Replace("[", "\"").Replace("]", "\"");
+                    property.SetComputedColumnSql(newComputedSql);
+                }
+
+                var columnType = property.GetColumnType();
+                if (columnType != null && columnType.Contains("nvarchar(max)", StringComparison.OrdinalIgnoreCase))
+                {
+                    property.SetColumnType("text");
+                }
+            }
+        }
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

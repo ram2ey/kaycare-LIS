@@ -1,3 +1,4 @@
+﻿using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -13,14 +14,14 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
             migrationBuilder.AddColumn<bool>(
                 name: "IsLaboratoryEnabled",
                 table: "FacilitySettings",
-                type: "bit",
+                type: "boolean",
                 nullable: false,
                 defaultValue: true);
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsRadiologyEnabled",
                 table: "FacilitySettings",
-                type: "bit",
+                type: "boolean",
                 nullable: false,
                 defaultValue: true);
         }
@@ -38,3 +39,4 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
         }
     }
 }
+

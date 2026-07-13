@@ -1,3 +1,4 @@
+﻿using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -17,14 +18,14 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "ImagingProcedures",
                 columns: table => new
                 {
-                    ImagingProcedureId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    ProcedureCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    ProcedureName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Modality = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    BodyPart = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ImagingProcedureId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    ProcedureCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ProcedureName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Modality = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    BodyPart = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     TatHours = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -35,17 +36,17 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "RadiologyOrders",
                 columns: table => new
                 {
-                    RadiologyOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BillId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    OrderingDoctorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Priority = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    ClinicalIndication = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    RadiologyOrderId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    BillId = table.Column<Guid>(type: "uuid", nullable: true),
+                    OrderingDoctorUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Priority = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    ClinicalIndication = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -74,27 +75,27 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
                 name: "RadiologyOrderItems",
                 columns: table => new
                 {
-                    RadiologyOrderItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWSEQUENTIALID()"),
-                    RadiologyOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ImagingProcedureId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProcedureName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Modality = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    BodyPart = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    RadiologyOrderItemId = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    RadiologyOrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ImagingProcedureId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProcedureName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Modality = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    BodyPart = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     TatHours = table.Column<int>(type: "int", nullable: false),
-                    AccessionNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    AcquiredAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ReportedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SignedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SignedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Findings = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
-                    Impression = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    Recommendations = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    ReportingDoctorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    PacsStudyUid = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    PacsViewerUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    AccessionNumber = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    Status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    AcquiredAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    ReportedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    SignedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    SignedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Findings = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
+                    Impression = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    Recommendations = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    ReportingDoctorUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PacsStudyUid = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    PacsViewerUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -201,3 +202,4 @@ namespace KayCareLIS.Infrastructure.Data.Migrations
         }
     }
 }
+

@@ -16,10 +16,10 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
             .Build();
 
         var connectionString = config.GetConnectionString("DefaultConnection")
-            ?? "Server=.\\SQLEXPRESS;Database=KayCareLISDb;Trusted_Connection=True;TrustServerCertificate=True;";
+            ?? "Host=localhost;Database=kaycare_lis;Username=postgres;Password=postgres";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseSqlServer(connectionString);
+        optionsBuilder.UseNpgsql(connectionString);
 
         var tenantContext = new DesignTimeTenantContext();
         return new AppDbContext(optionsBuilder.Options, tenantContext);

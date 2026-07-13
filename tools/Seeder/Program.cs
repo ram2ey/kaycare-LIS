@@ -4,12 +4,12 @@ using KayCareLIS.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 var connectionString = args.FirstOrDefault()
-    ?? "Server=.\\SQLEXPRESS;Database=KayCareLISDb;Trusted_Connection=True;TrustServerCertificate=True;";
+    ?? "Host=localhost;Database=kaycare_lis;Username=postgres;Password=postgres";
 
-Console.WriteLine($"Seeding KayCareLISDb...");
+Console.WriteLine($"Seeding KayCareLISDb (PostgreSQL)...");
 
 var options = new DbContextOptionsBuilder<AppDbContext>()
-    .UseSqlServer(connectionString, o => o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null))
+    .UseNpgsql(connectionString, o => o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null))
     .Options;
 
 var tenantContext = new DesignTimeTenantContext();

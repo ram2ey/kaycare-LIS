@@ -20,8 +20,8 @@ public static class DependencyInjection
 
         // EF Core
         services.AddDbContext<AppDbContext>(opts =>
-            opts.UseSqlServer(config.GetConnectionString("DefaultConnection"),
-                sql => sql.EnableRetryOnFailure(3)));
+            opts.UseNpgsql(config.GetConnectionString("DefaultConnection"),
+                b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
 
         // Tenant context — scoped so it's per-request and mutated by middleware
         services.AddScoped<TenantContext>();
