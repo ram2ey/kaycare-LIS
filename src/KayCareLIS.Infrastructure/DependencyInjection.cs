@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QuestPDF.Infrastructure;
 using Azure.Storage.Blobs;
+using Amazon.S3;
 
 [assembly: InternalsVisibleTo("KayCareLIS.UnitTests")]
 
@@ -17,6 +18,9 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         QuestPDF.Settings.License = LicenseType.Community;
+
+        // Security Encryption
+        services.AddSingleton<Security.EncryptionHelper>();
 
         // EF Core
         services.AddDbContext<AppDbContext>(opts =>
@@ -57,12 +61,22 @@ public static class DependencyInjection
         services.AddScoped<IBillingPdfService,      BillingPdfService>();
         services.AddScoped<IRadiologyReportService, RadiologyReportService>();
 
-        // Azure Blob Storage
-        var blobConn = config.GetConnectionString("BlobStorage")
-            ?? config["AzureStorage:ConnectionString"]
-            ?? "UseDevelopmentStorage=true";
-        services.AddSingleton(_ => new BlobServiceClient(blobConn));
-        services.AddScoped<IBlobStorageService, BlobStorageService>();
+        // Storage Provider Selection (AWS S3 or Azure Blob)
+        var storageProvider = config["StorageProvider"] ?? "Azure";
+        if (storageProvider.Equals("AWS", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddAWSService<IAmazonS3>();
+            services.AddScoped<IBlobStorageService, S3StorageService>();
+        }
+        else
+        {
+            // Azure Blob Storage
+            var blobConn = config.GetConnectionString("BlobStorage")
+                ?? config["AzureStorage:ConnectionString"]
+                ?? "UseDevelopmentStorage=true";
+            services.AddSingleton(_ => new BlobServiceClient(blobConn));
+            services.AddScoped<IBlobStorageService, BlobStorageService>();
+        }
 
         // MLLP listener (HL7 instrument integration) — disabled by default, enable via config
         if (config.GetValue<bool>("Mllp:Enabled"))

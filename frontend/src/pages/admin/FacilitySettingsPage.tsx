@@ -9,8 +9,6 @@ export function FacilitySettingsPage() {
     address: '',
     phone: '',
     email: '',
-    isLaboratoryEnabled: true,
-    isRadiologyEnabled: true,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -25,8 +23,6 @@ export function FacilitySettingsPage() {
           address: s.address ?? '',
           phone: s.phone ?? '',
           email: s.email ?? '',
-          isLaboratoryEnabled: s.isLaboratoryEnabled,
-          isRadiologyEnabled: s.isRadiologyEnabled,
         })
       })
       .finally(() => setLoading(false))
@@ -41,8 +37,6 @@ export function FacilitySettingsPage() {
         address: form.address || undefined,
         phone: form.phone || undefined,
         email: form.email || undefined,
-        isLaboratoryEnabled: form.isLaboratoryEnabled,
-        isRadiologyEnabled: form.isRadiologyEnabled,
       })
       setSettings(updated)
       setSuccess(true)
@@ -121,35 +115,7 @@ export function FacilitySettingsPage() {
             </div>
           </div>
 
-          <div className="border-t border-gray-150 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Enabled Modules</h3>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.isLaboratoryEnabled}
-                  onChange={(e) => setForm({ ...form, isLaboratoryEnabled: e.target.checked })}
-                  className="rounded border-gray-300 text-sky-650 focus:ring-sky-500 h-4 w-4"
-                />
-                <div>
-                  <p className="font-medium text-gray-900">Enable Laboratory Module</p>
-                  <p className="text-xs text-gray-405">Expose LIS clinical workflows, sample collections, and catalogs.</p>
-                </div>
-              </label>
-              <label className="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.isRadiologyEnabled}
-                  onChange={(e) => setForm({ ...form, isRadiologyEnabled: e.target.checked })}
-                  className="rounded border-gray-300 text-sky-650 focus:ring-sky-500 h-4 w-4"
-                />
-                <div>
-                  <p className="font-medium text-gray-900">Enable Radiology Module</p>
-                  <p className="text-xs text-gray-405">Expose RIS diagnostic workflows, PACS references, and scanning logs.</p>
-                </div>
-              </label>
-            </div>
-          </div>
+
 
           {success && (
             <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm text-green-700">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getResultByAccession, simulateHl7Message } from '../../api/labResults'
 import type { LabResultSummary } from '../../types/labResults'
 import { FLAG_COLORS } from '../../types/labOrders'
+import { repairHl7Message } from '../../api/ai'
 
 interface PresetObservation {
   code: string
@@ -28,6 +29,23 @@ export function Hl7InboxPage() {
   const [rawHl7, setRawHl7] = useState('')
   const [transmitting, setTransmitting] = useState(false)
   const [simMessage, setSimMessage] = useState('')
+  const [repairing, setRepairing] = useState(false)
+
+  const handleAiRepair = async () => {
+    if (!rawHl7.trim()) return
+    setRepairing(true)
+    setSimMessage('')
+    try {
+      const response = await repairHl7Message(rawHl7)
+      setRawHl7(response.repairedPayload)
+      setSimMessage(`AI Suggestion applied. Explanation: ${response.explanation}`)
+    } catch (err) {
+      console.error('Failed to run AI repair:', err)
+      setSimMessage('Error: AI Repair helper failed to analyze payload.')
+    } finally {
+      setRepairing(false)
+    }
+  }
 
   // Presets data
   const presets: Record<string, PresetObservation[]> = {
@@ -289,19 +307,19 @@ export function Hl7InboxPage() {
                   onClick={() => generateMessage('cbc')}
                   className="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-1"
                 >
-                  🧪 CBC
+                  CBC
                 </button>
                 <button
                   onClick={() => generateMessage('lipid')}
                   className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-1"
                 >
-                  🧬 Lipid Panel
+                  Lipid Panel
                 </button>
                 <button
                   onClick={() => generateMessage('renal')}
                   className="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-1"
                 >
-                  ⚡ Renal Panel
+                  Renal Panel
                 </button>
               </div>
             </div>
@@ -309,7 +327,19 @@ export function Hl7InboxPage() {
             {/* Raw Message Textarea */}
             <form onSubmit={handleSimulateSubmit} className="space-y-3 pt-2">
               <div>
-                <label className="block text-gray-600 font-semibold text-xs mb-1">Raw HL7 ORU^R01 Payload</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-gray-600 font-semibold text-xs">Raw HL7 ORU^R01 Payload</label>
+                  {rawHl7 && (
+                    <button
+                      type="button"
+                      onClick={handleAiRepair}
+                      disabled={repairing}
+                      className="text-[10px] text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 px-2 py-0.5 rounded cursor-pointer disabled:opacity-60"
+                    >
+                      {repairing ? 'Analyzing...' : '🪄 AI Parse Auto-Repair'}
+                    </button>
+                  )}
+                </div>
                 <textarea
                   rows={8}
                   value={rawHl7}
@@ -334,7 +364,7 @@ export function Hl7InboxPage() {
                 disabled={transmitting || !rawHl7}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-transform hover:scale-[1.01] shadow disabled:opacity-60"
               >
-                {transmitting ? 'Transmitting payload…' : '⚡ Transmit Simulated HL7'}
+                {transmitting ? 'Transmitting payload…' : 'Transmit Simulated HL7'}
               </button>
             </form>
           </div>

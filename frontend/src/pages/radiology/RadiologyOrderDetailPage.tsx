@@ -12,6 +12,7 @@ import type { RadiologyOrderDetail, RadiologyOrderItemResponse } from '../../typ
 import { ORDER_STATUS_COLORS, ITEM_STATUS_COLORS } from '../../types/radiology'
 import { useAuth } from '../../context/AuthContext'
 import { PacsViewerModal } from '../../components/PacsViewerModal'
+import { getRadiologyDraft } from '../../api/ai'
 
 export function RadiologyOrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -23,6 +24,26 @@ export function RadiologyOrderDetailPage() {
   const [reportForm, setReportForm] = useState({ findings: '', impression: '', recommendations: '', pacsStudyUid: '', pacsViewerUrl: '' })
   const [submitting, setSubmitting] = useState(false)
   const [activePacsItem, setActivePacsItem] = useState<RadiologyOrderItemResponse | null>(null)
+  const [drafting, setDrafting] = useState(false)
+
+  const handleAiDraft = async () => {
+    if (!reportItem) return
+    setDrafting(true)
+    try {
+      const draft = await getRadiologyDraft(reportItem.radiologyOrderItemId)
+      setReportForm({
+        ...reportForm,
+        findings: draft.findings,
+        impression: draft.impression,
+        recommendations: draft.recommendations || ''
+      })
+    } catch (err) {
+      console.error('Failed to get AI draft:', err)
+      alert('Failed to generate AI report draft. Ensure an image is uploaded and Gemini API key is configured.')
+    } finally {
+      setDrafting(false)
+    }
+  }
 
   function load() {
     if (!id) return
@@ -193,7 +214,7 @@ export function RadiologyOrderDetailPage() {
                           }}
                           className="text-xs text-sky-600 hover:underline mt-1.5 block font-semibold text-left"
                         >
-                          🩻 View in PACS Workstation
+                          View in PACS Workstation
                         </button>
                       )}
                     </div>
@@ -209,11 +230,11 @@ export function RadiologyOrderDetailPage() {
                           onClick={() => handleMarkAcquired(item.radiologyOrderItemId)}
                           className="text-yellow-600 hover:underline text-[10px] font-bold text-left self-start"
                         >
-                          ⚡ Mark Acquired (No Scan)
+                          Mark Acquired (No Scan)
                         </button>
                         <div className="relative flex flex-col items-center justify-center p-1.5 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-sky-300 transition-colors">
                           <label className="cursor-pointer text-[10px] text-sky-655 font-bold flex items-center gap-1">
-                            <span>🩻 Upload scan file</span>
+                            <span>Upload scan file</span>
                             <input
                               type="file"
                               accept="image/png, image/jpeg"
@@ -271,7 +292,19 @@ export function RadiologyOrderDetailPage() {
       {reportItem && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
-            <h3 className="font-semibold text-gray-800 mb-4">Radiology Report — {reportItem.procedureName}</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-gray-800">Radiology Report — {reportItem.procedureName}</h3>
+              {reportItem.pacsViewerUrl && (
+                <button
+                  type="button"
+                  onClick={handleAiDraft}
+                  disabled={drafting}
+                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer disabled:opacity-60"
+                >
+                  {drafting ? '🪄 Generating...' : '🪄 AI Draft Report'}
+                </button>
+              )}
+            </div>
             <form onSubmit={handleEnterReport} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Findings <span className="text-red-500">*</span></label>

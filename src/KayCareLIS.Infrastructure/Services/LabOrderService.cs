@@ -376,7 +376,7 @@ public class LabOrderService : ILabOrderService
             && i.Status != LabOrderItemStatus.Signed
             && DateTime.UtcNow > i.SampleReceivedAt.Value.AddHours(i.TatHours),
         IsCritical                 = i.IsCritical,
-        CriticalCallLogId          = i.CriticalCallLogId,
+        CriticalCallLogId          = i.CriticalCallLog?.CriticalCallLogId,
         CriticalCallLogRecipient   = i.CriticalCallLog?.RecipientName,
         CriticalCallLogNotes       = i.CriticalCallLog?.Notes,
         CriticalCallLogCalledAt    = i.CriticalCallLog?.CalledAt,
@@ -539,7 +539,7 @@ public class LabOrderService : ILabOrderService
         };
 
         _db.CriticalCallLogs.Add(log);
-        item.CriticalCallLogId = log.CriticalCallLogId;
+        item.CriticalCallLog = log;
         await _db.SaveChangesAsync(ct);
 
         return MapItem(item);

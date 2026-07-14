@@ -8,6 +8,8 @@ export interface TenantResponse {
   maxUsers: number
   storageQuotaGB: number
   userCount: number
+  isLaboratoryEnabled: boolean
+  isRadiologyEnabled: boolean
   createdAt: string
 }
 
@@ -20,6 +22,8 @@ export interface CreateTenantRequest {
   adminEmail: string
   adminFirstName: string
   adminLastName: string
+  isLaboratoryEnabled?: boolean
+  isRadiologyEnabled?: boolean
 }
 
 export interface UpdateTenantRequest {
@@ -27,4 +31,6 @@ export interface UpdateTenantRequest {
   subscriptionPlan: string
   maxUsers: number
   storageQuotaGB: number
+  isLaboratoryEnabled?: boolean
+  isRadiologyEnabled?: boolean
 }

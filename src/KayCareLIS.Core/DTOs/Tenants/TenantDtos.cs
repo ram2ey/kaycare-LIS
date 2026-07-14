@@ -11,6 +11,8 @@ public class TenantResponse
     public int    MaxUsers         { get; set; }
     public int    StorageQuotaGB   { get; set; }
     public int    UserCount        { get; set; }
+    public bool   IsLaboratoryEnabled { get; set; }
+    public bool   IsRadiologyEnabled { get; set; }
     public DateTime CreatedAt      { get; set; }
 }
 
@@ -24,6 +26,8 @@ public class CreateTenantRequest
     public string AdminEmail       { get; set; } = string.Empty;
     public string AdminFirstName   { get; set; } = string.Empty;
     public string AdminLastName    { get; set; } = string.Empty;
+    public bool   IsLaboratoryEnabled { get; set; } = true;
+    public bool   IsRadiologyEnabled  { get; set; } = true;
 }
 
 public class UpdateTenantRequest
@@ -32,4 +36,6 @@ public class UpdateTenantRequest
     public string SubscriptionPlan { get; set; } = string.Empty;
     public int    MaxUsers         { get; set; }
     public int    StorageQuotaGB   { get; set; }
+    public bool   IsLaboratoryEnabled { get; set; }
+    public bool   IsRadiologyEnabled  { get; set; }
 }

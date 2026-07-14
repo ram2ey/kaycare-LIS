@@ -10,6 +10,9 @@ public class Tenant
     public bool IsActive { get; set; } = true;
     public int MaxUsers { get; set; } = 50;
     public int StorageQuotaGB { get; set; } = 100;
+    public bool IsLaboratoryEnabled { get; set; } = true;
+    public bool IsRadiologyEnabled { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
+

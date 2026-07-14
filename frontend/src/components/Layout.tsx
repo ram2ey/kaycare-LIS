@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getFacilitySettings } from '../api/facility'
 import type { FacilitySettingsResponse } from '../types/facility'
+import { useSessionTimeout } from '../hooks/useSessionTimeout'
+import { CriticalAlertBanner } from './CriticalAlertBanner'
 
 const ADMIN_ROLES = ['SuperAdmin', 'Admin']
 const BILLING_ROLES = ['SuperAdmin', 'Admin', 'BillingOfficer', 'Receptionist']
@@ -29,6 +31,9 @@ export function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [settings, setSettings] = useState<FacilitySettingsResponse | null>(null)
+
+  // Enable inactivity session timeout lockout (HIPAA)
+  useSessionTimeout()
 
   useEffect(() => {
     getFacilitySettings()
@@ -131,8 +136,9 @@ export function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div key={location.pathname} className="animate-page-entry">
+      <main className="flex-1 overflow-auto flex flex-col">
+        <CriticalAlertBanner />
+        <div key={location.pathname} className="flex-1 animate-page-entry">
           <Outlet />
         </div>
       </main>

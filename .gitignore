@@ -32,3 +32,10 @@ Thumbs.db
 
 .claude/
 CLAUDE.md
+
+# Scratch / temporary files
+scratch/
+
+# Generated files
+*.pdf
+**/api_log.txt

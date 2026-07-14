@@ -14,12 +14,14 @@ public class RadiologyOrderService : IRadiologyOrderService
     private readonly AppDbContext        _db;
     private readonly ITenantContext      _tenantContext;
     private readonly ICurrentUserService _currentUser;
+    private readonly IBlobStorageService _blob;
 
-    public RadiologyOrderService(AppDbContext db, ITenantContext tenantContext, ICurrentUserService currentUser)
+    public RadiologyOrderService(AppDbContext db, ITenantContext tenantContext, ICurrentUserService currentUser, IBlobStorageService blob)
     {
         _db            = db;
         _tenantContext = tenantContext;
         _currentUser   = currentUser;
+        _blob          = blob;
     }
 
     public async Task<IReadOnlyList<ImagingProcedureResponse>> GetProcedureCatalogAsync(CancellationToken ct)
@@ -327,7 +329,7 @@ public class RadiologyOrderService : IRadiologyOrderService
         };
     }
 
-    private static RadiologyOrderItemResponse MapItem(RadiologyOrderItem i, Dictionary<Guid, string>? doctors) => new()
+    private RadiologyOrderItemResponse MapItem(RadiologyOrderItem i, Dictionary<Guid, string>? doctors) => new()
     {
         RadiologyOrderItemId  = i.RadiologyOrderItemId,
         ImagingProcedureId    = i.ImagingProcedureId,
@@ -347,11 +349,22 @@ public class RadiologyOrderService : IRadiologyOrderService
         ReportingDoctorName   = i.ReportingDoctorUserId.HasValue && doctors != null
             ? doctors.GetValueOrDefault(i.ReportingDoctorUserId.Value)
             : null,
-        PacsViewerUrl         = i.PacsViewerUrl,
+        PacsViewerUrl         = ResolvePacsUrl(i.PacsViewerUrl),
         IsTatExceeded         = i.AcquiredAt.HasValue
             && i.Status != RadiologyOrderItemStatus.Signed
             && DateTime.UtcNow > i.AcquiredAt.Value.AddHours(i.TatHours),
     };
+
+    private string? ResolvePacsUrl(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return null;
+        if (url.StartsWith("pacs-studies/"))
+        {
+            var parts = url.Split('/', 2);
+            return _blob.GenerateSasUri(parts[0], parts[1], TimeSpan.FromHours(2)).ToString();
+        }
+        return url;
+    }
 
     private static ImagingProcedureResponse MapProcedure(ImagingProcedure p) => new()
     {

@@ -178,8 +178,9 @@ public class CriticalAlertTests
         Assert.Equal("Tech One", dbLog.CalledByName);
         Assert.Equal(itemId, dbLog.LabOrderItemId);
 
-        var dbItem = await db.LabOrderItems.FindAsync(itemId);
+        var dbItem = await db.LabOrderItems.Include(i => i.CriticalCallLog).FirstOrDefaultAsync(i => i.LabOrderItemId == itemId);
         Assert.NotNull(dbItem);
-        Assert.Equal(dbLog.CriticalCallLogId, dbItem.CriticalCallLogId);
+        Assert.NotNull(dbItem.CriticalCallLog);
+        Assert.Equal(dbLog.CriticalCallLogId, dbItem.CriticalCallLog.CriticalCallLogId);
     }
 }

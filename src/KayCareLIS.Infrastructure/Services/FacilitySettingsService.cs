@@ -25,7 +25,9 @@ public class FacilitySettingsService : IFacilitySettingsService
     public async Task<FacilitySettingsResponse?> GetAsync(CancellationToken ct = default)
     {
         var settings = await _db.FacilitySettings.AsNoTracking().FirstOrDefaultAsync(ct);
-        return settings == null ? null : Map(settings);
+        if (settings == null) return null;
+        var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.TenantId == _tenantContext.TenantId, ct);
+        return Map(settings, tenant);
     }
 
     public async Task<FacilitySettingsResponse> UpsertAsync(SaveFacilitySettingsRequest request, CancellationToken ct = default)
@@ -41,8 +43,7 @@ public class FacilitySettingsService : IFacilitySettingsService
                 Address = request.Address?.Trim(),
                 Phone = request.Phone?.Trim(),
                 Email = request.Email?.Trim(),
-                IsLaboratoryEnabled = request.IsLaboratoryEnabled,
-                IsRadiologyEnabled = request.IsRadiologyEnabled,
+                // Module flags are managed at the Tenant level
             };
             _db.FacilitySettings.Add(settings);
         }
@@ -52,12 +53,12 @@ public class FacilitySettingsService : IFacilitySettingsService
             settings.Address = request.Address?.Trim();
             settings.Phone = request.Phone?.Trim();
             settings.Email = request.Email?.Trim();
-            settings.IsLaboratoryEnabled = request.IsLaboratoryEnabled;
-            settings.IsRadiologyEnabled = request.IsRadiologyEnabled;
+            // Module flags are managed at the Tenant level
         }
 
         await _db.SaveChangesAsync(ct);
-        return Map(settings);
+        var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.TenantId == _tenantContext.TenantId, ct);
+        return Map(settings, tenant);
     }
 
     public async Task<FacilitySettingsResponse> UploadLogoAsync(Stream stream, string contentType, string extension, CancellationToken ct = default)
@@ -72,7 +73,8 @@ public class FacilitySettingsService : IFacilitySettingsService
 
         settings.LogoBlobName = blobName;
         await _db.SaveChangesAsync(ct);
-        return Map(settings);
+        var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.TenantId == _tenantContext.TenantId, ct);
+        return Map(settings, tenant);
     }
 
     public async Task<FacilitySettingsResponse> DeleteLogoAsync(CancellationToken ct = default)
@@ -86,7 +88,8 @@ public class FacilitySettingsService : IFacilitySettingsService
             await _db.SaveChangesAsync(ct);
         }
 
-        return Map(settings);
+        var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.TenantId == _tenantContext.TenantId, ct);
+        return Map(settings, tenant);
     }
 
     public async Task<byte[]?> GetLogoBytesAsync(CancellationToken ct = default)
@@ -121,7 +124,7 @@ public class FacilitySettingsService : IFacilitySettingsService
         return $"tenant-{sanitized}";
     }
 
-    private FacilitySettingsResponse Map(FacilitySettings s) => new()
+    private FacilitySettingsResponse Map(FacilitySettings s, Tenant? tenant) => new()
     {
         FacilitySettingsId = s.FacilitySettingsId,
         FacilityName       = s.FacilityName,
@@ -132,8 +135,8 @@ public class FacilitySettingsService : IFacilitySettingsService
         LogoUrl            = string.IsNullOrEmpty(s.LogoBlobName)
             ? null
             : _blob.GenerateSasUri(ContainerName(), s.LogoBlobName, LogoSasExpiry).ToString(),
-        IsLaboratoryEnabled = s.IsLaboratoryEnabled,
-        IsRadiologyEnabled = s.IsRadiologyEnabled,
+        IsLaboratoryEnabled = tenant?.IsLaboratoryEnabled ?? true,
+        IsRadiologyEnabled = tenant?.IsRadiologyEnabled ?? true,
         UpdatedAt          = s.UpdatedAt,
     };
 }

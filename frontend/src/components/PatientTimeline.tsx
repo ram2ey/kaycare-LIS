@@ -393,7 +393,7 @@ export function PatientTimeline({
                                         }
                                         className="text-[10px] font-bold text-sky-700 hover:text-sky-850 flex items-center gap-0.5 border border-sky-100 px-2 py-0.5 rounded bg-sky-50 transition-colors cursor-pointer"
                                       >
-                                        🩻 View Study
+                                        View Study
                                       </button>
                                     )}
                                   </div>

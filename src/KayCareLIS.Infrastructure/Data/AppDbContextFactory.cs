@@ -1,4 +1,5 @@
 using KayCareLIS.Core.Interfaces;
+using KayCareLIS.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -22,7 +23,8 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         optionsBuilder.UseNpgsql(connectionString);
 
         var tenantContext = new DesignTimeTenantContext();
-        return new AppDbContext(optionsBuilder.Options, tenantContext);
+        var encryption = new EncryptionHelper(config);
+        return new AppDbContext(optionsBuilder.Options, tenantContext, encryption);
     }
 }
 

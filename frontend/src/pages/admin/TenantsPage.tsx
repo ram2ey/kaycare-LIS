@@ -176,6 +176,8 @@ function CreateTenantModal({
     adminEmail: '',
     adminFirstName: '',
     adminLastName: '',
+    isLaboratoryEnabled: true,
+    isRadiologyEnabled: true,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -273,6 +275,30 @@ function CreateTenantModal({
           </div>
 
           <div className="border-t border-gray-100 pt-4">
+            <h4 className="text-xs font-bold text-sky-800 uppercase tracking-wider mb-3">Enabled Modules</h4>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.isLaboratoryEnabled}
+                  onChange={(e) => setForm({ ...form, isLaboratoryEnabled: e.target.checked })}
+                  className="rounded border-gray-300 text-sky-600 focus:ring-sky-500 h-4 w-4"
+                />
+                <span>Laboratory Module</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.isRadiologyEnabled}
+                  onChange={(e) => setForm({ ...form, isRadiologyEnabled: e.target.checked })}
+                  className="rounded border-gray-300 text-sky-600 focus:ring-sky-500 h-4 w-4"
+                />
+                <span>Radiology Module</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
             <h4 className="text-xs font-bold text-sky-800 uppercase tracking-wider mb-3">Initial Administrator Account</h4>
             <div className="space-y-3">
               <div>
@@ -350,6 +376,8 @@ function EditTenantModal({
     subscriptionPlan: tenant.subscriptionPlan,
     maxUsers: tenant.maxUsers,
     storageQuotaGB: tenant.storageQuotaGB,
+    isLaboratoryEnabled: tenant.isLaboratoryEnabled,
+    isRadiologyEnabled: tenant.isRadiologyEnabled,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -430,6 +458,30 @@ function EditTenantModal({
                 onChange={(e) => setForm({ ...form, storageQuotaGB: parseInt(e.target.value) || 0 })}
                 className={inputCls}
               />
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
+            <h4 className="text-xs font-bold text-sky-800 uppercase tracking-wider mb-3">Enabled Modules</h4>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.isLaboratoryEnabled}
+                  onChange={(e) => setForm({ ...form, isLaboratoryEnabled: e.target.checked })}
+                  className="rounded border-gray-300 text-sky-600 focus:ring-sky-500 h-4 w-4"
+                />
+                <span>Laboratory Module</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.isRadiologyEnabled}
+                  onChange={(e) => setForm({ ...form, isRadiologyEnabled: e.target.checked })}
+                  className="rounded border-gray-300 text-sky-600 focus:ring-sky-500 h-4 w-4"
+                />
+                <span>Radiology Module</span>
+              </label>
             </div>
           </div>
 

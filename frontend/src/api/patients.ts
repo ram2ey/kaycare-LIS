@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { PatientSummary, PatientDetail, RegisterPatientRequest, UpdatePatientRequest } from '../types/patients'
+import type { RegisterPatientRequest, UpdatePatientRequest } from '../types/patients'
 
 function mapBackendPatient(p: any): any {
   if (!p) return p

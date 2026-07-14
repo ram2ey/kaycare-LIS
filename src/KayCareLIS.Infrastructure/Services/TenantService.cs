@@ -43,6 +43,8 @@ public class TenantService : ITenantService
             IsActive         = true,
             MaxUsers         = req.MaxUsers > 0 ? req.MaxUsers : 50,
             StorageQuotaGB   = req.StorageQuotaGB > 0 ? req.StorageQuotaGB : 10,
+            IsLaboratoryEnabled = req.IsLaboratoryEnabled,
+            IsRadiologyEnabled = req.IsRadiologyEnabled,
         };
         _db.Tenants.Add(tenant);
         await _db.SaveChangesAsync(ct);
@@ -74,6 +76,8 @@ public class TenantService : ITenantService
         tenant.SubscriptionPlan = req.SubscriptionPlan;
         tenant.MaxUsers         = req.MaxUsers;
         tenant.StorageQuotaGB   = req.StorageQuotaGB;
+        tenant.IsLaboratoryEnabled = req.IsLaboratoryEnabled;
+        tenant.IsRadiologyEnabled = req.IsRadiologyEnabled;
         await _db.SaveChangesAsync(ct);
         return Map(tenant);
     }
@@ -105,5 +109,7 @@ public class TenantService : ITenantService
         IsActive         = t.IsActive,
         MaxUsers         = t.MaxUsers,
         StorageQuotaGB   = t.StorageQuotaGB,
+        IsLaboratoryEnabled = t.IsLaboratoryEnabled,
+        IsRadiologyEnabled = t.IsRadiologyEnabled,
     };
 }

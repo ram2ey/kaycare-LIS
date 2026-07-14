@@ -1,5 +1,6 @@
 using KayCareLIS.Core.Entities;
 using KayCareLIS.Core.Interfaces;
+using KayCareLIS.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace KayCareLIS.Infrastructure.Data;
@@ -7,11 +8,13 @@ namespace KayCareLIS.Infrastructure.Data;
 public class AppDbContext : DbContext
 {
     private readonly ITenantContext _tenantContext;
+    private readonly EncryptionHelper _encryption;
 
-    public AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext tenantContext)
+    public AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext tenantContext, EncryptionHelper? encryption = null)
         : base(options)
     {
         _tenantContext = tenantContext;
+        _encryption    = encryption ?? new EncryptionHelper(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
     }
 
     public DbSet<Tenant>           Tenants          => Set<Tenant>();
@@ -41,6 +44,36 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // PHI Value Converter Encryption
+        var phiConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<string, string>(
+            v => _encryption.Encrypt(v),
+            v => _encryption.Decrypt(v)
+        );
+
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.FirstName)
+            .HasConversion(phiConverter);
+
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.LastName)
+            .HasConversion(phiConverter);
+
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.PhoneNumber)
+            .HasConversion(phiConverter);
+
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.Email)
+            .HasConversion(phiConverter);
+
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.AddressLine1)
+            .HasConversion(phiConverter);
+
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.NationalId)
+            .HasConversion(phiConverter);
 
         modelBuilder.Entity<User>()           .HasQueryFilter(u => u.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<Patient>()        .HasQueryFilter(p => p.TenantId == _tenantContext.TenantId);

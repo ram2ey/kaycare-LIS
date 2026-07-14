@@ -133,22 +133,21 @@ export function DashboardPage() {
               Good morning, {user?.firstName}
             </h1>
             <p className="text-sky-200 text-sm mt-1.5 flex items-center gap-1.5 font-medium">
-              <span>📅</span>
               {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
           <div className="flex gap-2">
             <Link to="/patients/new" className="bg-sky-500 hover:bg-sky-400 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md transition-transform hover:scale-[1.02] flex items-center gap-1.5">
-              <span>👤</span> Register Patient
+              Register Patient
             </Link>
             {showLab && (
               <Link to="/lab-orders/new" className="bg-white/10 hover:bg-white/15 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-transform hover:scale-[1.02] flex items-center gap-1.5 border border-white/10 backdrop-blur-sm">
-                <span>🧪</span> Lab Order
+                Lab Order
               </Link>
             )}
             {showRad && (
               <Link to="/radiology/new" className="bg-white/10 hover:bg-white/15 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-transform hover:scale-[1.02] flex items-center gap-1.5 border border-white/10 backdrop-blur-sm">
-                <span>🩻</span> Radiology Order
+                Radiology Order
               </Link>
             )}
           </div>
@@ -176,7 +175,6 @@ export function DashboardPage() {
                 value={loading ? '—' : String(labWaiting)}
                 color="border-amber-250 bg-gradient-to-br from-amber-50 to-orange-50 text-amber-900"
                 subtitle="Ordered tests"
-                icon="🧪"
                 link="/lab-orders/waiting"
               />
               <StatCard
@@ -184,7 +182,6 @@ export function DashboardPage() {
                 value={loading ? '—' : String(labInProgress)}
                 color="border-sky-250 bg-gradient-to-br from-sky-50 to-blue-50 text-sky-900"
                 subtitle="Processing samples"
-                icon="⚙️"
                 link="/lab-orders/waiting"
               />
             </>
@@ -196,7 +193,6 @@ export function DashboardPage() {
                 value={loading ? '—' : String(radStats?.scheduledCount ?? 0)}
                 color="border-indigo-250 bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-900"
                 subtitle="Scans queued"
-                icon="🩻"
                 link="/radiology"
               />
               <StatCard
@@ -204,7 +200,6 @@ export function DashboardPage() {
                 value={loading ? '—' : String(radStats?.acquiredCount ?? 0)}
                 color="border-teal-250 bg-gradient-to-br from-teal-50 to-emerald-50 text-teal-900"
                 subtitle="Scans completed"
-                icon="⚡"
                 link="/radiology"
               />
               <StatCard
@@ -212,7 +207,6 @@ export function DashboardPage() {
                 value={loading ? '—' : String(radStats?.reportedCount ?? 0)}
                 color="border-pink-250 bg-gradient-to-br from-pink-50 to-fuchsia-50 text-pink-900"
                 subtitle="Reports pending"
-                icon="✍️"
                 link="/radiology"
               />
             </>
@@ -350,7 +344,7 @@ export function DashboardPage() {
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-bold text-sky-750 uppercase tracking-widest flex items-center gap-1.5">
-                    <span>🧪</span> Clinical Lab Orders ({waiting.length})
+                    Clinical Lab Orders ({waiting.length})
                   </h3>
                   <Link to="/lab-orders/waiting" className="text-xs text-sky-650 hover:underline font-semibold">
                     Open Lab Waiting List →
@@ -418,7 +412,7 @@ export function DashboardPage() {
               <div className="p-5 bg-indigo-50/5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-bold text-indigo-800 uppercase tracking-widest flex items-center gap-1.5">
-                    <span>🩻</span> Radiology Studies ({radiologyOrders.length})
+                    Radiology Studies ({radiologyOrders.length})
                   </h3>
                   <Link to="/radiology" className="text-xs text-indigo-750 hover:underline font-semibold">
                     Open Radiology Worklist →
@@ -492,21 +486,18 @@ function StatCard({
   value,
   color,
   subtitle,
-  icon,
   link,
 }: {
   label: string
   value: string
   color: string
   subtitle: string
-  icon: string
   link: string
 }) {
   return (
     <Link to={link} className={`border rounded-2xl p-4 flex flex-col justify-between hover:scale-[1.02] hover:shadow-md transition-all group ${color}`}>
       <div className="flex justify-between items-start">
         <span className="text-[10px] font-bold uppercase tracking-wider opacity-75">{label}</span>
-        <span className="text-lg opacity-75 group-hover:scale-110 transition-transform">{icon}</span>
       </div>
       <div className="mt-4">
         <p className="text-3xl font-extrabold">{value}</p>

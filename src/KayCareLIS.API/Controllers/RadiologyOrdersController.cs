@@ -13,11 +13,13 @@ public class RadiologyOrdersController : ControllerBase
 {
     private readonly IRadiologyOrderService  _radiology;
     private readonly IRadiologyReportService _radiologyReport;
+    private readonly IBlobStorageService     _blob;
 
-    public RadiologyOrdersController(IRadiologyOrderService radiology, IRadiologyReportService radiologyReport)
+    public RadiologyOrdersController(IRadiologyOrderService radiology, IRadiologyReportService radiologyReport, IBlobStorageService blob)
     {
         _radiology       = radiology;
         _radiologyReport = radiologyReport;
+        _blob            = blob;
     }
 
     [HttpGet("catalog")]
@@ -69,20 +71,10 @@ public class RadiologyOrdersController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "No scan file uploaded." });
 
-        var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var pacsDir = Path.Combine(wwwrootPath, "pacs-studies");
-        if (!Directory.Exists(pacsDir))
-        {
-            Directory.CreateDirectory(pacsDir);
-        }
+        using var stream = file.OpenReadStream();
+        var pacsUrl = $"pacs-studies/{itemId}.png";
+        await _blob.UploadAsync("pacs-studies", $"{itemId}.png", stream, file.ContentType, ct);
 
-        var filePath = Path.Combine(pacsDir, $"{itemId}.png");
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream, ct);
-        }
-
-        var pacsUrl = $"/pacs-studies/{itemId}.png";
         var result = await _radiology.MarkAcquiredAsync(itemId, pacsUrl, ct);
         return Ok(result);
     }
