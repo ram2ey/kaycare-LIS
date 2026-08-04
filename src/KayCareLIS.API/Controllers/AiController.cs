@@ -18,6 +18,20 @@ public class AiController : ControllerBase
     private readonly IBlobStorageService _blob;
     private static readonly HttpClient _httpClient = new();
 
+    private static readonly string[] FreeModelsFallback = new[]
+    {
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "google/gemini-2.0-flash-lite-preview:free",
+        "deepseek/deepseek-r1:free",
+        "qwen/qwen-2.5-coder-32b-instruct:free"
+    };
+
+    private static readonly string[] FreeVisionModelsFallback = new[]
+    {
+        "google/gemini-2.0-flash-lite-preview:free",
+        "meta-llama/llama-3.2-11b-vision-instruct:free"
+    };
+
     public AiController(IConfiguration config, AppDbContext db, IBlobStorageService blob)
     {
         _config = config;
@@ -45,44 +59,13 @@ Format your response in Markdown with these sections:
 
 Be concise, technical, and professional.";
 
-        string? result = await CallGeminiAsync(prompt, jsonMode: false);
+        string? result = await CallOpenRouterAsync(prompt, jsonMode: false);
         if (result != null)
         {
             return Ok(new { interpretation = result });
         }
 
-        // Mock Lab Interpretation
-        StringBuilder mockBuilder = new();
-        mockBuilder.AppendLine("### 🧪 AI Clinical Interpretation Report");
-        mockBuilder.AppendLine($"**Patient:** {request.PatientName} | **Panel:** {request.TestName}\n");
-        mockBuilder.AppendLine("#### 1. Clinical Assessment Summary");
-        mockBuilder.AppendLine("The results indicate significant elevations in glycemic markers (Glucose & HbA1c), pointing towards **poorly controlled Diabetes Mellitus** or a new acute hyperglycemic presentation. Remaining hematology and metabolic markers are within normal limits.");
-        mockBuilder.AppendLine("\n#### 2. Abnormal Flags & Findings");
-        
-        bool foundElevations = false;
-        foreach (var item in request.Results)
-        {
-            if (item.Flag == "H" || item.Flag == "L" || item.Flag == "HH" || item.Flag == "LL" || item.Flag == "Critical")
-            {
-                foundElevations = true;
-                mockBuilder.AppendLine($"- **{item.TestName} ({item.TestCode})**: {item.Value} {item.Unit} (Ref: {item.RefRange}). **Flag: {item.Flag}**. Indicates acute physiological elevation.");
-            }
-        }
-        if (!foundElevations)
-        {
-            mockBuilder.AppendLine("- *No critical flags found.* Mild elevation in Glucose (6.8 mmol/L) is noted, suggesting borderline pre-diabetes.");
-        }
-
-        mockBuilder.AppendLine("\n#### 3. Pathophysiological Correlations");
-        mockBuilder.AppendLine("Elevated blood glucose levels in conjunction with high HbA1c suggest insulin resistance and persistent glucose toxicity. If accompanied by polyuria, polydipsia, or weight loss, immediate glycemic control intervention is indicated.");
-        mockBuilder.AppendLine("\n#### 4. Recommended Next Steps");
-        mockBuilder.AppendLine("1. Coordinate fasting blood glucose and oral glucose tolerance tests if necessary.");
-        mockBuilder.AppendLine("2. Initiate lifestyle modifications (medical nutrition therapy, physical exercise).");
-        mockBuilder.AppendLine("3. Review active medications; consider initiating or adjusting Metformin therapy.");
-        mockBuilder.AppendLine("4. Schedule repeat HbA1c in 3 months.");
-        mockBuilder.AppendLine("\n*Disclaimer: This is an AI-generated analysis intended for clinical support. Final diagnosis and treatment decisions remain the responsibility of the licensed physician.*");
-
-        return Ok(new { interpretation = mockBuilder.ToString() });
+        return StatusCode(503, new { message = "AI Assistant is temporarily unavailable.", error = "AI Assistant is temporarily unavailable." });
     }
 
     [HttpPost("radiology-drafter/{itemId:guid}")]
@@ -99,7 +82,6 @@ Be concise, technical, and professional.";
         if (string.IsNullOrEmpty(item.PacsViewerUrl))
             return BadRequest(new { message = "No scan image uploaded for this item." });
 
-        // Download scan from storage (could be S3 path like pacs-studies/guid.png)
         byte[]? scanBytes = null;
         string key = item.PacsViewerUrl;
         if (key.StartsWith("pacs-studies/"))
@@ -108,20 +90,13 @@ Be concise, technical, and professional.";
         }
         else if (key.Contains("/pacs-studies/"))
         {
-            // Resolve relative path fallback
             var filename = Path.GetFileName(key);
             scanBytes = await _blob.DownloadAsync("pacs-studies", filename, ct);
         }
 
         if (scanBytes == null || scanBytes.Length == 0)
         {
-            // If download fails, return a mock draft
-            return Ok(new
-            {
-                findings = "1. Heart size is normal. Lungs are clear. No pleural effusion or pneumothorax.\n2. Bony thorax is intact.",
-                impression = "Normal chest radiograph.",
-                recommendations = "No follow-up imaging required."
-            });
+            return StatusCode(503, new { message = "AI Assistant is temporarily unavailable.", error = "AI Assistant is temporarily unavailable." });
         }
 
         string patientName = $"{item.RadiologyOrder.Patient.FirstName} {item.RadiologyOrder.Patient.LastName}";
@@ -133,12 +108,11 @@ Provide a structured draft radiology report. Return a JSON object with fields:
 
 Format value fields as standard plain text strings. Return ONLY a valid JSON object, no surrounding markdown backticks or explanation text.";
 
-        string? result = await CallGeminiMultimodalAsync(prompt, scanBytes, "image/png");
+        string? result = await CallOpenRouterMultimodalAsync(prompt, scanBytes, "image/png");
         if (result != null)
         {
             try
             {
-                // Clean markdown backticks if returned
                 var cleaned = result.Trim();
                 if (cleaned.StartsWith("```"))
                 {
@@ -152,16 +126,11 @@ Format value fields as standard plain text strings. Return ONLY a valid JSON obj
             }
             catch
             {
-                // Fall through
+                // Fall through to 503
             }
         }
 
-        return Ok(new
-        {
-            findings = "1. Normal thoracic contours. Lungs are clear with no focal consolidation, pleural effusion, or pneumothorax.\n2. Normal cardiomediastinal silhouette.\n3. Visualized osseous structures are intact.",
-            impression = "No acute cardiopulmonary disease.",
-            recommendations = "Clinical correlation as indicated."
-        });
+        return StatusCode(503, new { message = "AI Assistant is temporarily unavailable.", error = "AI Assistant is temporarily unavailable." });
     }
 
     [HttpGet("icd10-finder")]
@@ -179,7 +148,7 @@ Return a JSON array of objects with fields:
 
 Return ONLY the raw JSON array. Do not wrap in markdown backticks or other text.";
 
-        string? result = await CallGeminiAsync(prompt, jsonMode: true);
+        string? result = await CallOpenRouterAsync(prompt, jsonMode: true);
         if (result != null)
         {
             try
@@ -197,17 +166,11 @@ Return ONLY the raw JSON array. Do not wrap in markdown backticks or other text.
             }
             catch
             {
-                // Fall through
+                // Fall through to 503
             }
         }
 
-        // Fallback search in db or hardcoded mockup
-        return Ok(new[]
-        {
-            new { code = "R07.9", description = "Chest pain, unspecified", matchConfidence = "High" },
-            new { code = "I20.9", description = "Angina pectoris, unspecified", matchConfidence = "Medium" },
-            new { code = "R07.89", description = "Other chest pain", matchConfidence = "Low" }
-        });
+        return StatusCode(503, new { message = "AI Assistant is temporarily unavailable.", error = "AI Assistant is temporarily unavailable." });
     }
 
     [HttpPost("patient-summary")]
@@ -227,13 +190,13 @@ Explain:
 
 Avoid all medical jargon where possible, or define it immediately. Be brief and supportive.";
 
-        string? result = await CallGeminiAsync(prompt, jsonMode: false);
+        string? result = await CallOpenRouterAsync(prompt, jsonMode: false);
         if (result != null)
         {
             return Ok(new { summary = result });
         }
 
-        return Ok(new { summary = "Your results are within normal limits. Your doctor will discuss any specific recommendations during your next appointment." });
+        return StatusCode(503, new { message = "AI Assistant is temporarily unavailable.", error = "AI Assistant is temporarily unavailable." });
     }
 
     [HttpPost("hl7-repair")]
@@ -252,7 +215,7 @@ Analyze the message, find the syntax/structural issues, and return a JSON object
 
 Return ONLY a JSON object, no other text or backticks.";
 
-        string? result = await CallGeminiAsync(prompt, jsonMode: true);
+        string? result = await CallOpenRouterAsync(prompt, jsonMode: true);
         if (result != null)
         {
             try
@@ -270,62 +233,79 @@ Return ONLY a JSON object, no other text or backticks.";
             }
             catch
             {
-                // Fall through
+                // Fall through to 503
             }
         }
 
-        return Ok(new
-        {
-            explanation = "Delimiters and segment spacing issues corrected.",
-            repairedPayload = request.RawHl7.Replace("\n", "\r")
-        });
+        return StatusCode(503, new { message = "AI Assistant is temporarily unavailable.", error = "AI Assistant is temporarily unavailable." });
     }
 
-    private async Task<string?> CallGeminiAsync(string prompt, bool jsonMode = false)
+    private async Task<string?> CallOpenRouterAsync(string prompt, bool jsonMode = false)
     {
-        var apiKey = _config["Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
-        if (string.IsNullOrEmpty(apiKey))
+        var apiKey = _config["OpenRouter:ApiKey"]
+                  ?? _config["OPENROUTER_API_KEY"]
+                  ?? Environment.GetEnvironmentVariable("OPENROUTER_API_KEY")
+                  ?? _config["Gemini:ApiKey"]
+                  ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+
+        if (string.IsNullOrEmpty(apiKey)) return null;
+
+        var customModel = _config["OpenRouter:Model"]
+                       ?? _config["OPENROUTER_MODEL"]
+                       ?? Environment.GetEnvironmentVariable("OPENROUTER_MODEL");
+
+        var modelsToUse = !string.IsNullOrWhiteSpace(customModel) && customModel != "openrouter/auto"
+            ? new[] { customModel }
+            : FreeModelsFallback;
+
+        object requestBody;
+        if (jsonMode)
         {
-            return null;
+            requestBody = new
+            {
+                models = modelsToUse,
+                messages = new[]
+                {
+                    new { role = "user", content = prompt }
+                },
+                response_format = new { type = "json_object" }
+            };
+        }
+        else
+        {
+            requestBody = new
+            {
+                models = modelsToUse,
+                messages = new[]
+                {
+                    new { role = "user", content = prompt }
+                }
+            };
         }
 
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={apiKey}";
-        
-        var requestBody = new
-        {
-            contents = new[]
-            {
-                new
-                {
-                    parts = new[]
-                    {
-                        new { text = prompt }
-                    }
-                }
-            },
-            generationConfig = jsonMode ? new { responseMimeType = "application/json" } : null
-        };
-
         var jsonContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+
         try
         {
-            var response = await _httpClient.PostAsync(url, jsonContent);
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
+            using var req = new HttpRequestMessage(HttpMethod.Post, "https://openrouter.ai/api/v1/chat/completions");
+            req.Headers.Add("Authorization", $"Bearer {apiKey}");
+            req.Headers.Add("HTTP-Referer", "https://kaycare.com");
+            req.Headers.Add("X-Title", "KayCare LIS");
+            req.Content = jsonContent;
+
+            var response = await _httpClient.SendAsync(req);
+            if (!response.IsSuccessStatusCode) return null;
 
             var responseBody = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(responseBody);
             var root = doc.RootElement;
-            if (root.TryGetProperty("candidates", out var candidates) &&
-                candidates.GetArrayLength() > 0 &&
-                candidates[0].TryGetProperty("content", out var content) &&
-                content.TryGetProperty("parts", out var parts) &&
-                parts.GetArrayLength() > 0 &&
-                parts[0].TryGetProperty("text", out var text))
+
+            if (root.TryGetProperty("choices", out var choices) &&
+                choices.GetArrayLength() > 0 &&
+                choices[0].TryGetProperty("message", out var message) &&
+                message.TryGetProperty("content", out var content))
             {
-                return text.GetString();
+                return content.GetString();
             }
         }
         catch
@@ -336,33 +316,42 @@ Return ONLY a JSON object, no other text or backticks.";
         return null;
     }
 
-    private async Task<string?> CallGeminiMultimodalAsync(string prompt, byte[] imageBytes, string mimeType)
+    private async Task<string?> CallOpenRouterMultimodalAsync(string prompt, byte[] imageBytes, string mimeType)
     {
-        var apiKey = _config["Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            return null;
-        }
+        var apiKey = _config["OpenRouter:ApiKey"]
+                  ?? _config["OPENROUTER_API_KEY"]
+                  ?? Environment.GetEnvironmentVariable("OPENROUTER_API_KEY")
+                  ?? _config["Gemini:ApiKey"]
+                  ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={apiKey}";
+        if (string.IsNullOrEmpty(apiKey)) return null;
+
         var base64Data = Convert.ToBase64String(imageBytes);
+        var imageUrl = $"data:{mimeType};base64,{base64Data}";
+
+        var customModel = _config["OpenRouter:Model"]
+                       ?? _config["OPENROUTER_MODEL"]
+                       ?? Environment.GetEnvironmentVariable("OPENROUTER_MODEL");
+
+        var modelsToUse = !string.IsNullOrWhiteSpace(customModel) && customModel != "openrouter/auto"
+            ? new[] { customModel }
+            : FreeVisionModelsFallback;
 
         var requestBody = new
         {
-            contents = new[]
+            models = modelsToUse,
+            messages = new[]
             {
                 new
                 {
-                    parts = new object[]
+                    role = "user",
+                    content = new object[]
                     {
-                        new { text = prompt },
+                        new { type = "text", text = prompt },
                         new
                         {
-                            inlineData = new
-                            {
-                                mimeType = mimeType,
-                                data = base64Data
-                            }
+                            type = "image_url",
+                            image_url = new { url = imageUrl }
                         }
                     }
                 }
@@ -370,25 +359,28 @@ Return ONLY a JSON object, no other text or backticks.";
         };
 
         var jsonContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+
         try
         {
-            var response = await _httpClient.PostAsync(url, jsonContent);
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
+            using var req = new HttpRequestMessage(HttpMethod.Post, "https://openrouter.ai/api/v1/chat/completions");
+            req.Headers.Add("Authorization", $"Bearer {apiKey}");
+            req.Headers.Add("HTTP-Referer", "https://kaycare.com");
+            req.Headers.Add("X-Title", "KayCare LIS");
+            req.Content = jsonContent;
+
+            var response = await _httpClient.SendAsync(req);
+            if (!response.IsSuccessStatusCode) return null;
 
             var responseBody = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(responseBody);
             var root = doc.RootElement;
-            if (root.TryGetProperty("candidates", out var candidates) &&
-                candidates.GetArrayLength() > 0 &&
-                candidates[0].TryGetProperty("content", out var content) &&
-                content.TryGetProperty("parts", out var parts) &&
-                parts.GetArrayLength() > 0 &&
-                parts[0].TryGetProperty("text", out var text))
+
+            if (root.TryGetProperty("choices", out var choices) &&
+                choices.GetArrayLength() > 0 &&
+                choices[0].TryGetProperty("message", out var message) &&
+                message.TryGetProperty("content", out var content))
             {
-                return text.GetString();
+                return content.GetString();
             }
         }
         catch
